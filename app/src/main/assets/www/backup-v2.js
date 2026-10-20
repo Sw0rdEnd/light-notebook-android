@@ -1,5 +1,6 @@
 import {membershipId} from './organize.js';
 import {validateCatalogPackage} from './equipment.js';
+import {CATALOG_REVISION} from './equipment-data.js';
 export const EXTRA_STORES=['groups','memberships','imports','equipment','kits','catalog'];
 const safeId=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(v);
 const text=(v,max=1000)=>typeof v==='string'&&v.length<=max;
@@ -25,7 +26,7 @@ export async function restoredExtras(store,data,photos){
   for(const s of data.sessions){const pp=photos.filter(p=>p.sessionId===s.id);if(!pp.length)continue;const gid='legacy-'+s.id,old=await store.get('groups',gid);payload.groups.push(old||{id:gid,name:`${s.day} · ${s.summary?.slice(0,30)||'摄影练习'}`,description:'从R0备份中的练习归组迁移。',sessionId:s.id,coverPhotoId:pp[0].id,order:payload.groups.length,createdAt:s.createdAt,demo:!!s.demo});for(const p of pp)payload.memberships.push({id:membershipId(gid,p.id),groupId:gid,photoId:p.id});}
  }
  // Catalog packages retain unverified provenance and no external image rights after import.
- if(payload.catalog.length){const revision=Math.max(20261021,...payload.catalog.map(r=>r.revision||0));payload.catalog=validateCatalogPackage({app:'light-journal-equipment',schema:1,revision,records:payload.catalog});}
+ if(payload.catalog.length){const revision=Math.max(CATALOG_REVISION+1,...payload.catalog.map(r=>r.revision||0));payload.catalog=validateCatalogPackage({app:'light-journal-equipment',schema:1,revision,records:payload.catalog});}
  payload.settings=data.settings.filter(s=>s&&(s.id==='appearance'&&['dark','light'].includes(s.value)||data.version===2&&s.id==='default-kit'&&(s.value==null||safeId(s.value))||data.version===2&&s.id==='last-import'&&payload.imports.some(r=>r.id===s.value?.id)));
  payload.settings.push({id:'data-version',value:2});
  return payload;

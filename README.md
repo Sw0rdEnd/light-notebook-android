@@ -1,8 +1,10 @@
-# 光影练习册 · 0.2.0
+# 光影练习册 · 0.2.1
 
 在原有 Android 工程上增量升级的摄影训练、照片整理与作品复盘应用。电脑预览与 APK 共用前端；手机和电脑的数据各自保存在本机，暂不自动共享，使用备份迁移。
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
+
+0.2.1新增：常见设备型号随应用预置，添加设备时按类型、品牌、具体型号直接选择；全局下拉框统一为手机底部面板 / 电脑浮层，支持搜索、选中状态和键盘操作。界面更新为浅色圆角卡片与玫红强调色，同时保留深色主题。详见[本次验收](UI_CATALOG_ACCEPTANCE.md)与[完整内置型号清单](EQUIPMENT_CATALOG.md)。
 
 ## 直接运行电脑预览
 
@@ -28,20 +30,20 @@ npm run dev
 
 ## 设备资料与图片边界
 
-本地资料快照核对日期为 2026-10-20，首批8品牌、13个按卡口区分的条目。所有来源直接保存在资料条目中：Sony、Canon、Nikon、Fujifilm、Panasonic、OM SYSTEM、Sigma、Tamron。
+本地资料快照核对日期为2026-10-20，内置8品牌、78个按卡口区分的条目（61个具体型号：27台机身、51个镜头卡口版本），无需自行导入。入口：设置 → 我的设备 → 添加设备。支持中文品牌和A7M4等型号简称搜索，未收录或冷门器材保留手动添加。所有来源直接保存在资料条目中：Sony、Canon、Nikon、Fujifilm、Panasonic、OM SYSTEM、Sigma、Tamron。
 
 已核实 Sigma 镜头完整型号为 **20–200mm F3.5–6.3 DG | Contemporary（C025）**，分别收录 Sony E（540g）和 L（550g）。添加默认 A7C II 组合前需要用户核对自己的镜身/包装，确认 Sony E 卡口。
 
-Sigma 999 USD 为2025-09-09美国官方发布价；Tamron A071 129800 JPY为日本官方建议零售价（含税，2026-04-01资料）。不混同当前售价、市场促销价和中国指导价。其余未核实的官方价格明确显示未知；部分 OM 镜头规格仍标注未核实。
+Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本官方建议零售价（含税，2026-04-01资料）。新增Canon R6 II与RF24–70mm F2.8 L的价格为新加坡官网RRP，未扣除促销与返现。不混同当前售价、市场促销价和中国指导价。其余未核实的官方价格明确显示未知；部分OM镜头规格仍标注未核实。
 
-首批没有取得可离线分发的官方图片许可，统一使用明确占位和官网链接，没有AI设备图。图片机制支持维护者确认许可后的浏览器缓存和 APK 内置授权图片；普通浏览只读本地资料及已有缓存，不实时抓取官网。APK目前不联网下载图片。用户增量资料包不会自动取得“官方核验”或图片许可状态。
+当前没有取得可离线分发的官方图片许可，使用明确标注「非产品照片」的设备类别图标和官网链接，没有AI设备图。图片机制支持维护者确认许可后的浏览器缓存和APK内置授权图片；普通浏览只读本地资料及已有缓存，不实时抓取官网。APK目前不联网下载图片。用户增量资料包不会自动取得“官方核验”或图片许可状态。
 
 ## 存储、迁移与安装
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | `release/光影练习册_Android_v0.2.0.apk` |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode 5 |
+| APK | `release/光影练习册_Android_v0.2.1.apk` |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode 6 |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -61,21 +63,21 @@ npm test
 npm run test:browser
 ```
 
-真实浏览器测试自动选择本机 Chrome 或 Edge，使用隔离测试数据；其他机器可设置 `BROWSER_PATH`，或安装 Playwright 的 Chromium。手机尺寸393×852，桌面1440×1000，截图在 `release/qa/`。本次本机另备有 `.tools/runtime/node_modules/node/bin/node.exe` 可执行 Node24。
+真实浏览器测试自动选择本机Chrome或Edge，使用隔离测试数据；其他机器可设置`BROWSER_PATH`，或安装Playwright的Chromium。手机尺寸393×852，桌面1440×1000；原流程截图在`release/qa/`，本次界面/型号/多选面板截图在`release/qa-ui/`。本机另备有`.tools/runtime/node_modules/node/bin/node.exe`可执行Node24。
 
 APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 
 ```powershell
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.0.apk" --baseline "release/光影练习册_Android_R0_v0.1.3.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.1.apk" --baseline "release/光影练习册_Android_v0.2.0.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
 
 `signing/`必须使用原私有升级签名并另行备份，不提交到GitHub。缺少签名时构建会明确停止，不生成替代签名。源代码修改不会自动更新已安装APK，需要重新构建并覆盖安装。
 
-本次验证：28项Node测试、2条真实Edge完整流程（桌面/手机尺寸）、10项Java选图检查；APK编译、签名、zipalign、资产一致性及原签名核对分别记录在验收文档。按用户要求先交付APK，安卓真机运行验收留待设备连接后进行。
+本次验证：30项Node测试、6条真实Edge流程（桌面/手机尺寸）、10项Java选图检查；APK编译、签名、zipalign、资源一致性及原签名核对分别记录在验收文档。按用户要求先交付APK，安卓真机运行验收留待设备连接后进行。
 
 ## 主要代码位置
 
@@ -84,6 +86,8 @@ python scripts/verify-apk.py "release/光影练习册_Android_v0.2.0.apk" --base
 | `app/src/main/assets/www/app.js` | 原应用入口、任务与页面事件 |
 | `organize.js` / `workspace-ui.js` | 分组、迁移、批量整理与导入界面 |
 | `equipment-data.js` / `equipment.js` / `equipment-ui.js` | 官方来源快照、设备规则与设备界面 |
+| `equipment-presets.js` / `catalog-search.js` | 常见具体型号、卡口版本和中文/简称搜索 |
+| `choice-picker.js` / `community.css` | 全局选择面板、照片卡片及深浅主题 |
 | `equipment-tasks.js` / `comparison-ui.js` | 任务适配、联动对比与选片复盘 |
 | `backup.js` / `backup-v2.js` | 版本化备份、完整验证与原子恢复 |
 | `browser-store.js` / `native.js` | 浏览器和Android存储适配 |

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SEED_CATALOG} from '../app/src/main/assets/www/equipment-data.js';
+import {SEED_CATALOG,CATALOG_REVISION} from '../app/src/main/assets/www/equipment-data.js';
 import {compatibility,focalPractice,matchExif,photoEquipment,defaultEquipment,validateCatalogPackage} from '../app/src/main/assets/www/equipment.js';
 import {createSession} from '../app/src/main/assets/www/core.js';
 const get=id=>SEED_CATALOG.find(r=>r.id===id);
 test('audited local catalog keeps mount variants, dates, unknown prices and image rights explicit',()=>{
- assert.equal(SEED_CATALOG.length,13);assert.equal(new Set(SEED_CATALOG.map(r=>r.brand)).size,8);
+ assert.ok(SEED_CATALOG.length>=75);assert.equal(new Set(SEED_CATALOG.map(r=>r.brand)).size,8);assert.equal(new Set(SEED_CATALOG.map(r=>r.id)).size,SEED_CATALOG.length);
  for(const r of SEED_CATALOG){assert.ok(r.sources.length);assert.ok(r.sources.every(s=>s.url.startsWith('https://')));assert.equal(r.checkedAt,'2026-10-20');assert.equal(r.image.url,null);assert.equal(r.image.cacheAllowed,false);if(r.price.amount===null)assert.equal(r.price.type,'unverified');}
  assert.equal(get('sigma-c025-e').weightG,540);assert.equal(get('sigma-c025-l').weightG,550);assert.equal(get('sigma-c025-e').price.type,'official-launch');assert.equal(get('tamron-a071-e').price.type,'official-msrp');
 });
@@ -26,7 +26,7 @@ test('EXIF matching preserves ambiguity, uses body mount, and never substitutes 
 });
 test('catalog packages are versioned data and cannot declare imported images or specs audited',()=>{
  assert.throws(()=>validateCatalogPackage({app:'light-journal-equipment',schema:1,revision:1,records:[]}));
- const data={app:'light-journal-equipment',schema:1,revision:20261021,records:[get('sony-ilce7cm2')]};const [r]=validateCatalogPackage(data);assert.equal(r.provenance,'user-import');assert.equal(r.image.url,null);assert.equal(r.image.cacheAllowed,false);
+ const data={app:'light-journal-equipment',schema:1,revision:CATALOG_REVISION+1,records:[get('sony-ilce7cm2')]};const [r]=validateCatalogPackage(data);assert.equal(r.provenance,'user-import');assert.equal(r.image.url,null);assert.equal(r.image.cacheAllowed,false);
  data.records[0]={...data.records[0],crop:-1};assert.throws(()=>validateCatalogPackage(data));
 });
 test('training uses real owned lens ranges and feasible apertures, retains historical snapshot',()=>{

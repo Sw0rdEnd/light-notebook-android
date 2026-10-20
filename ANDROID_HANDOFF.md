@@ -1,6 +1,6 @@
 # Android R0 交接 · 2026-10-20
 
-> 以下0.1.x段落保留为历史记录；当前权威状态为文末「0.2.0四阶段增量升级交接」及PROJECT_STATUS.md。
+> 以下0.1.x及0.2.0段落保留为历史记录；当前权威状态为文末「0.2.1预置型号与界面」及PROJECT_STATUS.md。
 
 用户新增请求：「做成 apk 文件，使用安卓手机存储」。本轮保持原有 R0 功能，仅将本地存储、文件选择与导出适配到 Android。
 
@@ -67,7 +67,7 @@ npm test
 
 最新版本 versionCode 4/versionName 0.1.3，包名和签名不变，schema 1 不变。12 项 Node 测试、10 项 Java 选图检查、API35 编译/D8/签名/对齐通过；未进行浏览器截图和安卓真机验收。以 README.md 为启动入口。文件包内 signing 请本人保留，不要公开提交。
 
-## 0.2.0四阶段增量升级交接（当前权威状态）
+## 0.2.0四阶段增量升级交接（历史）
 
 当前versionCode5/versionName0.2.0，包名与原升级签名保留。安装包在release/光影练习册_Android_v0.2.0.apk；源码、启动方式和四阶段验收见README.md及UPGRADE_ACCEPTANCE.md。
 
@@ -81,3 +81,13 @@ npm test
 本次实际检查：28项Node回归、真实Edge桌面/手机尺寸2条完整使用流程、10项Java选图解析检查通过；APK编译、D8、签名、zipalign和scripts/verify-apk.py资源/版本/旧证书一致性检查通过。SQLite桥接fixture和浏览器测试不是安卓运行时。
 
 用户已明确「暂时不能，先交付APK和真机验收步骤」。因此尚未进行安卓真机/模拟器安装运行、真实系统文件选择器/软键盘/安全区域及实际覆盖升级数据验收。按UPGRADE_ACCEPTANCE.md清单连接设备后执行；覆盖安装前导出含照片备份，不先卸载。
+
+## 0.2.1预置型号与界面（当前权威状态）
+
+versionCode6/versionName0.2.1，安装包release/光影练习册_Android_v0.2.1.apk。包名、签名、SQLite和备份数据版本2保持兼容，不迁移或重写照片与历史设备快照。
+
+设备库内置78个按卡口区分的条目、61个具体型号，常见设备按类型→品牌→型号直接添加，支持中文与简称搜索；手动添加及资料包仅为补充。型号和来源完整列表见EQUIPMENT_CATALOG.md。
+
+choice-picker.js统一增强全部select，保留原表单数据和change事件，显示手机底部面板/电脑浮层；多选分组明确确认/取消。嵌套面板可用cancel/Escape或android-back关闭最上层，不会误关设备/照片编辑弹窗。原生导航、系统栏和WebView背景配合新的浅色/深色主题，仍保留原insets与键盘隐藏底栏逻辑。
+
+本次30项Node、真实Edge桌面/手机尺寸6条流程、10项Java检查通过；APK编译/D8/签名/zipalign及逐文件资源/0.2.0证书一致性检查通过。截图release/qa-ui；详细操作验收见UI_CATALOG_ACCEPTANCE.md。真机安装、软键盘和实际系统栏仍按用户之前选择留待连接设备后，不能用Edge手机尺寸模拟代替。

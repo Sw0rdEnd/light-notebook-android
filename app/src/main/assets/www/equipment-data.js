@@ -1,5 +1,6 @@
 // Audited local snapshot. No website scraping occurs when browsing the library.
-export const CATALOG_REVISION = 20261020;
+import {commonPresets} from './equipment-presets.js';
+export const CATALOG_REVISION = 20261021;
 const checkedAt='2026-10-20';
 const item=(id,type,brand,model,mount,format,crop,spec,source,aliases=[])=>({
   id,type,brand,model,mount,format,crop,aliases,revision:CATALOG_REVISION,checkedAt,provenance:'official-specification',
@@ -28,4 +29,5 @@ export const SEED_CATALOG=[
   item('nikon-zdx1650','lens','Nikon','NIKKOR Z DX 16–50mm f/3.5–6.3 VR','Nikon Z','APS-C',1.5,{weightG:135,focal:[16,50],maxAperture:[3.5,6.3],stabilization:true,minFocus:'0.20m（24mm）/ 0.23m（35mm）/ 0.25m（16mm）/ 0.30m（50mm）',magnification:'0.2×',filterMm:46},'https://www.nikonusa.com/p/nikkor-z-dx-16-50mm-f35-63-vr/20084/overview',['NIKKOR Z DX 16-50mm f/3.5-6.3 VR']),
   item('panasonic-s2060','lens','Panasonic','LUMIX S 20–60mm F3.5–5.6 (S-R2060)','L-Mount','全画幅',1,{weightG:350,focal:[20,60],maxAperture:[3.5,5.6],stabilization:false,minFocus:'0.15m（20–26mm）/ 0.4m（60mm）',magnification:'0.43×（26mm）',filterMm:67},'https://help.na.panasonic.com/wp-content/uploads/2023/02/SR2060_DVQX2110ZA_ENG_FRE_ESP_CHI_GER_ITA_RUS_TAI.pdf',['S-R2060','LUMIX S 20-60/F3.5-5.6']),
   item('om-1245f4','lens','OM SYSTEM','M.Zuiko Digital ED 12–45mm F4.0 PRO','Micro Four Thirds','M4/3',2,{weightG:254,focal:[12,45],maxAperture:[4,4],stabilization:null,minFocus:'最近0.12m（广角）；长焦端待核实',magnification:null,filterMm:58,notes:'尚未从本次抓取的官方页面核实防抖和最大倍率，保留未知，不推断。'},'https://explore.omsystem.com/us/en/m-zuiko-ed-12-45mm-f4-0-pro-black',['OLYMPUS M.12-45mm F4.0','M.12-45mm F4.0'])
+  , ...commonPresets(item)
 ];

@@ -31,13 +31,13 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
         if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);
-        getWindow().setStatusBarColor(Color.rgb(21,23,22));getWindow().setNavigationBarColor(Color.rgb(21,23,22));
+        getWindow().setStatusBarColor(Color.WHITE);getWindow().setNavigationBarColor(Color.WHITE);
         getWindow().getDecorView().setSystemUiVisibility(0);
-        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(21,23,22));
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.WHITE);
         // Android 15+ enforces edge-to-edge: apply system bar and keyboard insets outside the web content.
         if(Build.VERSION.SDK_INT>=30)root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);if(navigation!=null)navigation.setVisibility(insets.isVisible(WindowInsets.Type.ime())?View.GONE:View.VISIBLE);return WindowInsets.CONSUMED;});
         else root.setFitsSystemWindows(true);
-        web=new WebView(this);web.setBackgroundColor(Color.rgb(21,23,22));root.addView(web,new LinearLayout.LayoutParams(-1,0,1f));
+        web=new WebView(this);web.setBackgroundColor(Color.rgb(247,248,250));root.addView(web,new LinearLayout.LayoutParams(-1,0,1f));
         navigation=new LinearLayout(this);navigation.setOrientation(LinearLayout.HORIZONTAL);navigation.setGravity(Gravity.CENTER);
         String[][] tabs={{"practice","练习"},{"photos","照片"},{"growth","成长"},{"settings","设置"}};
         for(String[] tab:tabs){
@@ -47,8 +47,8 @@ public final class MainActivity extends Activity {
             item.setContentDescription(tab[1]);item.setFocusable(true);item.setClickable(true);item.setOnClickListener(v->{if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('android-navigation',{detail:"+JSONObject.quote(key)+"}));",null);});
             navigation.addView(item,new LinearLayout.LayoutParams(0,-1,1f));
         }
-        root.addView(navigation,new LinearLayout.LayoutParams(-1,dp(64)));setContentView(root);setNavigation("practice","dark");
-        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.0");
+        root.addView(navigation,new LinearLayout.LayoutParams(-1,dp(64)));setContentView(root);setNavigation("practice","light");
+        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.1");
         WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
@@ -83,8 +83,9 @@ public final class MainActivity extends Activity {
     public void setNavigation(String tab,String theme){
         if(!navLabels.containsKey(tab))return;
         runOnUiThread(()->{
-            currentTab=tab;boolean light="light".equals(theme);int bg=light?Color.rgb(242,240,233):Color.rgb(21,23,22),muted=light?Color.rgb(82,94,84):Color.rgb(177,183,175),accent=light?Color.rgb(114,91,52):Color.rgb(198,177,138);
+            currentTab=tab;boolean light="light".equals(theme);int bg=light?Color.rgb(255,255,255):Color.rgb(20,20,23),muted=light?Color.rgb(102,105,117):Color.rgb(192,190,199),accent=light?Color.rgb(237,63,89):Color.rgb(255,82,105);
             navigation.setBackgroundColor(bg);getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);
+            ((View)navigation.getParent()).setBackgroundColor(bg);web.setBackgroundColor(light?Color.rgb(247,248,250):Color.rgb(20,20,23));
             getWindow().getDecorView().setSystemUiVisibility(light?View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR:0);
             for(String key:navLabels.keySet()){boolean selected=key.equals(currentTab);navLabels.get(key).setTextColor(selected?accent:muted);navLabels.get(key).setSelected(selected);NavIcon icon=navIcons.get(key);icon.tint=selected?accent:muted;icon.invalidate();View item=(View)navLabels.get(key).getParent();item.setSelected(selected);item.setContentDescription(navLabels.get(key).getText()+(selected?"，当前页面":""));}
         });
