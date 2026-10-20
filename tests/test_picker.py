@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='light-picker-test-') as d:
  out=base/'classes';out.mkdir()
  subprocess.run(['java','-jar',sys.argv[1],'-17','-nowarn','-d',str(out),str(src),*[str(base/n) for n in sources]],check=True)
  subprocess.run(['java','-cp',str(out),'cn.xiaohuang.lightjournal.PickerTest'],check=True)
- activity=(src.parent/'MainActivity.java').read_text()
+ activity=(src.parent/'MainActivity.java').read_text(encoding='utf-8')
  assert 'FileSelection.parse(result,data)' in activity
  assert 'FileChooserParams.parseResult(result,data)' not in activity
  print('PASS MainActivity uses tested parser')

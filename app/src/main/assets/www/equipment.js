@@ -31,7 +31,7 @@ export function defaultEquipment(equipment,kits,defaultId) {
   const kit=kits.find(k=>k.id===defaultId);if(!kit)return null;
   const body=equipment.find(e=>e.id===kit.bodyId&&e.active&&e.ownership==='owned'),lens=equipment.find(e=>e.id===kit.lensId&&e.active&&e.ownership==='owned');
   if(!body||body.snapshot.type!=='phone'&&!lens)return null;
-  const check=compatibility(body.snapshot,lens?.snapshot);if(!['native','crop'].includes(check.kind))return null;
+  const check=compatibility(body.snapshot,lens?.snapshot),manualSameMount=lens&&body.snapshot.mount===lens.snapshot.mount&&body.snapshot.mount!=='未知'&&[body.snapshot,lens.snapshot].some(r=>['manual','user-import'].includes(r.provenance));if(!['native','crop'].includes(check.kind)&&!manualSameMount)return null;
   return {kitId:kit.id,name:kit.name,body:body.snapshot,lens:lens?.snapshot||null,check};
 }
 export function validateCatalogPackage(data) {

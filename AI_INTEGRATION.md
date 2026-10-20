@@ -5,7 +5,7 @@
 ## 已实现的调用路径
 
 1. 照片详情/双图比较 → `ai-review` 事件。
-2. `ai.js` 的 `buildEvaluationRequest(photos,{session,note})` 生成 1–2 张照片的请求。
+2. 用户填写问题并主动发起，`ai.js` 的 `buildEvaluationRequest(photos,{session,note,catalog})` 生成 1–2 张照片的请求；浏览和导入不发起评价。
 3. `requestEvaluation(request,{provider})`：
    - 显式传入 provider 时调用 `provider.evaluate(request)`，用于后续提供商适配。
    - APK 默认调用 `AndroidStorage.request('aiEvaluate', JSON.stringify({request}))` → `LocalStore` → `AiEvaluationService.evaluate`。
@@ -20,7 +20,13 @@
   "requestId": "UUID",
   "createdAt": "ISO-8601",
   "mode": "single 或 compare",
-  "equipment": {"camera": "Sony A7C II", "lens": "Sigma 20–200mm"},
+  "equipment": null,
+  "evidenceRules": {
+    "exif": "原始文件元数据，不据此断言照片好坏",
+    "corrections": "用户修正，与EXIF分开",
+    "observation": "可从画面观察的事实",
+    "inference": "模型推测必须明确标注"
+  },
   "learningContext": {"theme": "focal", "scene": "street", "tasks": [], "summary": ""},
   "note": "用户补充，可空",
   "photos": [{
@@ -30,13 +36,18 @@
     "width": 6000,
     "height": 4000,
     "exif": {"focal": 35, "aperture": 5.6, "iso": 100, "exposure": 0.004},
+    "equipment": {"body": null, "lens": null},
+    "corrections": {},
+    "reviewNote": "用户保存的复盘，可空",
     "localPreview": {"available": true, "file": "UUID.jpg", "mime": "image/jpeg"},
-    "userMarks": {"liked": false, "improve": false, "star": false, "reasons": []}
+    "userMarks": {"liked": false, "improve": false, "star": false, "cull": "undecided", "tags": [], "reasons": []}
   }]
 }
 ```
 
-`learningContext` 可为 null。`localPreview.file` 是**设备本地引用**，不是远程服务可读取的 URL；浏览器中可能为 null，而照片 Blob 仍可用。
+顶层`equipment`为练习创建时保存的设备组合快照，没有关联练习时为null；不能用默认设备冒充照片的拍摄设备。逐图`equipment`为资料库匹配或用户选择的机身/镜头记录，识别不出时为null；`corrections`独立保存用户修正和设备快照，`exif`保留原始内容。`note`是本次用户问题，`reviewNote`是先前复盘。
+
+`learningContext`可为null。`localPreview.file`是**设备本地引用**，不是远程服务可读取的URL；浏览器中可能为null，而照片Blob仍可用。
 将来 provider 需要通过照片 ID 在本地 Store 中解析 preview 数据、组织实际传输；不要把本地文件名直接交给远端让其猜测，也不要自动上传原图。
 
 ## 未接入返回（当前真实行为）
@@ -60,15 +71,16 @@
   "status": "ok",
   "summary": "对照片取舍的简短说明",
   "observations": [
-    {"aspect": "composition", "text": "具体观察及对应照片标签"},
-    {"aspect": "light", "text": "光线的具体观察"}
+    {"aspect": "composition", "basis": "observation", "text": "具体画面观察及对应照片标签"},
+    {"aspect": "exposure", "basis": "exif", "text": "明确引用原始曝光参数，不单凭参数判定好坏"},
+    {"aspect": "intent", "basis": "inference", "text": "可能的拍摄意图，明确属于推测"}
   ],
   "nextSteps": ["下一次可以现场完成的一项建议"],
   "preferred": "A"
 }
 ```
 
-`preferred` 可为 A、B、tie 或 null；单张评价使用 null。请求 ID/schema 不符、结构错误会被拒绝。结果渲染需要转义普通文字，不能将第三方 HTML 插入页面。
+`preferred`可为A、B、tie或null；单张评价使用null。`basis`只接受observation、exif和inference；旧provider未填写时降为inference，非法类别拒绝。请求ID/schema不符、结构错误会被拒绝。后续结果界面必须显示证据类别并转义文字，不能将第三方HTML插入页面。
 
 ## 下一轮接入要补齐
 

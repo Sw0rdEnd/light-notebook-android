@@ -50,14 +50,19 @@ public final class LocalStore extends SQLiteOpenHelper {
     private JSONArray readAll(String store) throws Exception {
         JSONArray result = new JSONArray();
         try (Cursor c=getReadableDatabase().query("records",new String[]{"body"},"store=?",new String[]{storeName(store)},null,null,"rowid")) {
-            while(c.moveToNext()) result.put(new JSONObject(c.getString(0)));
+            while(c.moveToNext()) {JSONObject row=new JSONObject(c.getString(0));result.put(store.equals("photos")?markMissing(row):row);}
         }
         return result;
     }
     private JSONObject readOne(String store,String id) throws Exception {
         try(Cursor c=getReadableDatabase().query("records",new String[]{"body"},"store=? AND id=?",new String[]{storeName(store),safeId(id)},null,null,null)) {
-            return c.moveToFirst()?new JSONObject(c.getString(0)):null;
+            if(!c.moveToFirst())return null;JSONObject row=new JSONObject(c.getString(0));return store.equals("photos")?markMissing(row):row;
         }
+    }
+    private JSONObject markMissing(JSONObject row) throws Exception {
+        String preview=row.optString("previewFile",""),thumb=row.optString("thumbFile","");
+        row.put("missingImage",preview.isEmpty() || !photoFile(preview).isFile() || thumb.isEmpty() || !photoFile(thumb).isFile());
+        return row;
     }
     private void commit(JSONObject payload) throws Exception {
         // Validate every referenced JPEG before opening the transaction.
@@ -68,7 +73,16 @@ public final class LocalStore extends SQLiteOpenHelper {
                 JSONObject row=rows.getJSONObject(i);safeId(row.getString("id"));
                 if(name.equals("photos")) for(String field:new String[]{"previewFile","thumbFile"}) {
                     String file=row.optString(field,"");
-                    if(!file.isEmpty()) { if(!photoFile(file).isFile())throw new IOException("复盘照片文件缺失，请重新导入。");accepted.add(file); }
+                    if(!file.isEmpty()) {
+                        if(!photoFile(file).isFile()) {
+                            // Existing missing files must not prevent metadata migration/review.
+                            // A newly introduced missing reference still aborts the entire transaction.
+                            JSONObject old=readOne("photos",row.getString("id"));
+                            if(old==null || !file.equals(old.optString(field,"")))throw new IOException("复盘照片文件缺失，请重新导入。");
+                            row.put("missingImage",true);
+                        }
+                        accepted.add(file);
+                    }
                 }
             }
         }

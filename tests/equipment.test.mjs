@@ -18,6 +18,7 @@ test('compatibility uses mount and coverage, treats adapters and unknown data co
 test('wish-list, inactive and removed devices never participate in default recommendations',()=>{
  const body={id:'body',snapshot:get('sony-ilce7cm2'),ownership:'owned',active:true},lens={id:'lens',snapshot:get('sigma-c025-e'),ownership:'owned',active:true},kits=[{id:'kit',bodyId:'body',lensId:'lens'}];
  assert.ok(defaultEquipment([body,lens],kits,'kit'));assert.equal(defaultEquipment([body,{...lens,ownership:'curious'}],kits,'kit'),null);assert.equal(defaultEquipment([body,{...lens,active:false}],kits,'kit'),null);assert.equal(defaultEquipment([body],kits,'kit'),null);
+ const manual=defaultEquipment([body,{...lens,snapshot:{...lens.snapshot,provenance:'manual'}}],kits,'kit');assert.equal(manual.check.kind,'unknown');assert.match(createSession({equipment:manual}).tasks[0].start,/未核实/);
 });
 test('EXIF matching preserves ambiguity, uses body mount, and never substitutes a default',()=>{
  const exif={camera:'ILCE-7CM2',lens:'20-200mm F3.5-6.3 DG',focal:85};assert.equal(matchExif(exif).lens.id,'sigma-c025-e');assert.equal(matchExif({lens:exif.lens}).lens,null);assert.equal(matchExif({camera:'mystery'}).body,null);

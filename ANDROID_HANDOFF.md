@@ -1,5 +1,7 @@
 # Android R0 交接 · 2026-10-20
 
+> 以下0.1.x段落保留为历史记录；当前权威状态为文末「0.2.0四阶段增量升级交接」及PROJECT_STATUS.md。
+
 用户新增请求：「做成 apk 文件，使用安卓手机存储」。本轮保持原有 R0 功能，仅将本地存储、文件选择与导出适配到 Android。
 
 ## 本地版本关系
@@ -53,7 +55,7 @@ npm test
 
 下一步先收集这次覆盖安装后的真实手机反馈；无需卸载、无需改网页 Site，不要改包名/签名/SQLite schema。源码包保留 signing 供覆盖升级，勿公开上传。
 
-## 0.1.3 + PC 开发预览交接（当前权威状态）
+## 0.1.3 + PC 开发预览交接（历史）
 
 用户在手机反馈首页过长、底栏被遮挡、参数不便对比，要求预留 AI 评价接口；后在 PC 要求拿到源码并使用 VS Code 预览。
 
@@ -64,3 +66,18 @@ npm test
 新增 BrowserStore/Store 门面，存在 AndroidStorage 时仍用 NativeStore；普通浏览器用 IndexedDB。新增无依赖 Node 预览服务、设备尺寸页、保存后刷新和 VS Code F5 配置。PC 与 APK 不自动同步，通过 JSON 备份迁移。
 
 最新版本 versionCode 4/versionName 0.1.3，包名和签名不变，schema 1 不变。12 项 Node 测试、10 项 Java 选图检查、API35 编译/D8/签名/对齐通过；未进行浏览器截图和安卓真机验收。以 README.md 为启动入口。文件包内 signing 请本人保留，不要公开提交。
+
+## 0.2.0四阶段增量升级交接（当前权威状态）
+
+当前versionCode5/versionName0.2.0，包名与原升级签名保留。安装包在release/光影练习册_Android_v0.2.0.apk；源码、启动方式和四阶段验收见README.md及UPGRADE_ACCEPTANCE.md。
+
+- SQLite user_version升级至2，继续使用原records表，增加groups/memberships/imports/equipment/kits/catalog命名空间。前端语义迁移2保留旧sessionId，原子生成分组与关联；JPEG路径不迁移、不删除。IndexedDB升级2采用对应存储。
+- merge同时支持原子删除与写入；分组删除仅移除关联，照片删除才清理照片和所有分组关系。丢失JPEG时readAll/readOne标记缺失，既有同一照片文件引用允许保存整理/迁移记录，新无效文件引用仍拒绝。
+- v2备份支持完整新命名空间、外键和封面检查，先验证/解码再原子合并，兼容v1。元数据备份恢复不抹掉本机已有图片；相同内容原文件重导入可修复缺图。
+- MainActivity保留WebView weight=1和原生四项固定底栏/insets。用户点击官方HTTPS来源使用系统浏览器打开；外部网页不进入带原生桥接的WebView。APK仍无INTERNET权限。
+- 官方设备图目前均为明确占位；仅为以后取得许可的图片提供APK内置路径和浏览器显式加载缓存机制，APK不联网抓图。
+- 构建脚本支持Windows工具，使用原signing密钥；缺失时明确停止，不能生成替代升级签名。本机使用已有IntelliJ Java21和工程内Python，官方API35/Build Tools35/ECJ。
+
+本次实际检查：28项Node回归、真实Edge桌面/手机尺寸2条完整使用流程、10项Java选图解析检查通过；APK编译、D8、签名、zipalign和scripts/verify-apk.py资源/版本/旧证书一致性检查通过。SQLite桥接fixture和浏览器测试不是安卓运行时。
+
+用户已明确「暂时不能，先交付APK和真机验收步骤」。因此尚未进行安卓真机/模拟器安装运行、真实系统文件选择器/软键盘/安全区域及实际覆盖升级数据验收。按UPGRADE_ACCEPTANCE.md清单连接设备后执行；覆盖安装前导出含照片备份，不先卸载。

@@ -40,6 +40,6 @@ def main():
  run('java','-jar',bt/'lib/apksigner.jar','sign','--ks',key,'--ks-key-alias','lightjournal','--ks-pass','env:LIGHT_JOURNAL_SIGN_PASS','--key-pass','env:LIGHT_JOURNAL_SIGN_PASS','--v1-signing-enabled','true','--v2-signing-enabled','true','--v3-signing-enabled','true','--out',apk,b/'aligned.apk',env=signenv)
  run('java','-jar',bt/'lib/apksigner.jar','verify','--verbose','--print-certs',apk)
  run(bt/('zipalign'+exe),'-c','4',apk)
- (out/'SHA256.txt').write_text(hashlib.sha256(apk.read_bytes()).hexdigest()+'  '+apk.name+'\n')
+ (out/'SHA256.txt').write_text(hashlib.sha256(apk.read_bytes()).hexdigest()+'  '+apk.name+'\n',encoding='utf-8')
  print('APK:',apk)
 if __name__=='__main__':main()

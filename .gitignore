@@ -31,3 +31,5 @@ app/build/
 *.db-wal
 *.sqlite
 *.sqlite3
+test-results/
+playwright-report/
