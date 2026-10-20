@@ -1,0 +1,13 @@
+export function createComparisonUI(ctx){
+ const {state,store,esc,btn,reload,render,toast,showCompare}=ctx;
+ state.zoom=1;state.panX=50;state.panY=50;
+ function editor(a,b){return `<div class="zoom-controls"><label>联动放大 <input id="compare-zoom" type="range" min="1" max="4" step="0.1" value="${state.zoom}"></label><label>水平位置 <input id="compare-x" type="range" min="0" max="100" value="${state.panX}"></label><label>垂直位置 <input id="compare-y" type="range" min="0" max="100" value="${state.panY}"></label>${btn('还原全貌','compare-reset')}</div><section class="compare-review form-stack"><h3>记录这次取舍</h3><label>选片结果<select class="field" id="compare-decision"><option value="undecided">两张待定</option><option value="A">保留 A，B 待定</option><option value="B">保留 B，A 待定</option><option value="both">两张保留</option><option value="A-reject">保留 A，淘汰 B</option><option value="B-reject">保留 B，淘汰 A</option></select></label><label>简短原因<textarea id="compare-reason" class="field" maxlength="1000" placeholder="例如：A 的背景更干净。">${esc(a.comparisonResult?.otherPhotoId===b.id?a.comparisonResult.reason:'')}</textarea></label>${btn('保存选片与复盘','compare-save','primary')}<p class="small muted">两侧联动缩放与相对位置；不是像素级图像配准，使用2400px复盘副本，不是原图100%判焦。</p></section>`;}
+ function input(target){const key={'compare-zoom':'zoom','compare-x':'panX','compare-y':'panY'}[target.id];if(!key)return false;state[key]=Number(target.value);const stage=document.querySelector('.compare-stage');stage?.style.setProperty('--compare-zoom',state.zoom);stage?.style.setProperty('--compare-x',state.panX+'%');stage?.style.setProperty('--compare-y',state.panY+'%');return true;}
+ async function action(el){if(el.dataset.action==='compare-reset'){state.zoom=1;state.panX=state.panY=50;showCompare();return true;}if(el.dataset.action!=='compare-save')return false;
+  const photos=state.selected.slice(0,2).map(id=>state.photos.find(p=>p.id===id));if(photos.some(p=>!p))throw new Error('对比照片已不存在。');
+  const decision=document.querySelector('#compare-decision').value,reason=document.querySelector('#compare-reason').value.trim(),at=new Date().toISOString();
+  const culls=decision==='both'?['keep','keep']:decision.startsWith('A')?['keep',decision.endsWith('reject')?'reject':'undecided']:decision.startsWith('B')?[decision.endsWith('reject')?'reject':'undecided','keep']:['undecided','undecided'];
+  await store.merge({photos:photos.map((p,i)=>({...p,cull:culls[i],reviewNote:reason,reviewedAt:at,comparisonResult:{otherPhotoId:photos[1-i].id,decision,reason,at}}))});await reload();render();showCompare();toast('选片结果与原因已保存。');return true;
+ }
+ return {editor,input,action};
+}

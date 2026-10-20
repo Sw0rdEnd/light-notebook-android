@@ -21,12 +21,12 @@ export function readExif(input){
    if(type===3)return u16(at);if(type===4)return u32(at);
    if(type===5||type===10){const a=type===5?u32(at):view.getInt32(at,little),b=type===5?u32(at+4):view.getInt32(at+4,little);return b?a/b:null;}return null;
   };
-  const tags={0x010f:'make',0x0110:'camera',0x0132:'modifiedAt',0x9003:'takenAt',0x829a:'exposure',0x829d:'aperture',0x8827:'iso',0x920a:'focal',0xa434:'lens',0x0112:'orientation'};
+  const tags={0x010f:'make',0x0110:'camera',0x0132:'modifiedAt',0x9003:'takenAt',0x829a:'exposure',0x829d:'aperture',0x8827:'iso',0x920a:'focal',0xa405:'focal35',0xa434:'lens',0x0112:'orientation'};
   const seen=new Set();function ifd(offset){if(seen.has(offset))return;seen.add(offset);const at=t+offset,n=Math.min(u16(at),512);check(at+2,n*12);for(let i=0;i<n;i++){const e=at+2+i*12,k=u16(e),v=val(e);if(k===0x8769)sub=v;if(tags[k]&&v!=null&&v!=='')result[tags[k]]=v;}}
   ifd(u32(t+4));if(Number.isInteger(sub)&&sub>0)ifd(sub);
  }
  }catch{/* Malformed or truncated metadata must not prevent image import. */}
- for(const k of ['focal','aperture','exposure','iso','orientation'])if(result[k]!=null&&(!Number.isFinite(result[k])||result[k]<=0))delete result[k];
+ for(const k of ['focal','focal35','aperture','exposure','iso','orientation'])if(result[k]!=null&&(!Number.isFinite(result[k])||result[k]<=0))delete result[k];
  for(const k of ['make','camera','lens','modifiedAt','takenAt'])if(result[k]!=null&&(typeof result[k]!=='string'||result[k].length>300))delete result[k];
  if(result.takenAt&&!/^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}$/.test(result.takenAt))delete result.takenAt;
  return result;

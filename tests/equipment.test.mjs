@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SEED_CATALOG} from '../app/src/main/assets/www/equipment-data.js';
 import {compatibility,focalPractice,matchExif,photoEquipment,defaultEquipment,validateCatalogPackage} from '../app/src/main/assets/www/equipment.js';
+import {createSession} from '../app/src/main/assets/www/core.js';
 const get=id=>SEED_CATALOG.find(r=>r.id===id);
 test('audited local catalog keeps mount variants, dates, unknown prices and image rights explicit',()=>{
  assert.equal(SEED_CATALOG.length,13);assert.equal(new Set(SEED_CATALOG.map(r=>r.brand)).size,8);
@@ -26,4 +27,12 @@ test('catalog packages are versioned data and cannot declare imported images or 
  assert.throws(()=>validateCatalogPackage({app:'light-journal-equipment',schema:1,revision:1,records:[]}));
  const data={app:'light-journal-equipment',schema:1,revision:20261021,records:[get('sony-ilce7cm2')]};const [r]=validateCatalogPackage(data);assert.equal(r.provenance,'user-import');assert.equal(r.image.url,null);assert.equal(r.image.cacheAllowed,false);
  data.records[0]={...data.records[0],crop:-1};assert.throws(()=>validateCatalogPackage(data));
+});
+test('training uses real owned lens ranges and feasible apertures, retains historical snapshot',()=>{
+ const gear={name:'我的变焦',body:get('sony-ilce7cm2'),lens:get('sigma-c025-e'),check:compatibility(get('sony-ilce7cm2'),get('sigma-c025-e'))};
+ const focal=createSession({theme:'focal',equipment:gear});assert.match(focal.tasks[0].action,/20、50、200mm/);assert.ok(!JSON.stringify(focal.tasks).includes('f/1.4'));assert.match(focal.tasks[0].start,/f\/8/);
+ const exposure=createSession({theme:'exposure',equipment:gear});assert.match(exposure.tasks[2].action,/f\/8 与 f\/11/);
+ gear.name='更改后的组合';assert.equal(focal.equipment.name,'我的变焦');
+ const prime=createSession({theme:'focal',equipment:{...gear,body:get('fujifilm-xt5'),lens:get('fujifilm-xf35f2')}});assert.match(prime.tasks[0].action,/定焦/);assert.ok(!prime.tasks[0].action.includes('200'));
+ const phone=createSession({theme:'exposure',equipment:{body:{type:'phone'}}});assert.match(phone.tasks[2].action,/手机/);assert.ok(!JSON.stringify(phone.tasks).includes('f/1.4'));
 });

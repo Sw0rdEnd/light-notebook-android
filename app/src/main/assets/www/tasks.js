@@ -1,3 +1,4 @@
+import {adaptTasks} from './equipment-tasks.js';
 export const SCENES = {street:['街头','留意日常里的秩序与瞬间','route'],park:['公园','从树影、花草与空间开始','leaf'],architecture:['建筑','观察线条、比例与透视','building'],still:['静物','一个杯子也能练习光线','coffee'],pet:['宠物','跟着它的节奏，等待发生','cat'],portrait:['人像','需要有人愿意配合拍摄','user']};
 export const THEMES = {composition:['构图','减法，让视线有落点'],focal:['焦段','改变焦段，也改变距离'],exposure:['曝光','理解亮部与暗部的取舍'],light:['光线','发现方向、质感与轮廓'],selection:['照片取舍','从相似画面里选出一张']};
 // 每个模板针对六种场景替换主体与条件，共 6×5×3 = 90 个可用任务。
@@ -25,11 +26,11 @@ selection:[
 ['只留一个理由','用具体理由做选择。','回看刚才三张，选择最想保留的一张；指出一个视觉理由，而不只说好看。','选出一张；可用“主体突出”“光线合适”等自己的话。','EXIF 不能代替画面判断，也不能据此断定失焦或器材问题。','回看参数是帮助理解选择，不是给照片打技术分。'],
 ['带着问题补一张','把复盘变成下一次行动。','找出未选照片的一处可改进问题，只做一个改变再补拍，回看是否有帮助。','保留改前与改后；允许发现“改了但没有更好”。','一次改太多，无法知道是哪个变化起作用。','先沿用原来的参数；只有需要时再调整曝光或快门。']]
 };
-export function generateTasks(scene,theme,minutes){
+export function generateTasks(scene,theme,minutes,equipment=null){
  const out=base[theme].map((v,i)=>({id:`${scene}-${theme}-${i}`,title:v[0],purpose:v[1],action:v[2].replaceAll('{S}',subjects[scene]),standard:v[3],problem:v[4]+' '+issues[scene],start:v[5],status:'todo',note:''}));
  if(minutes>=45) out.push({id:`${scene}-${theme}-3`,title:'横与竖，各一种表达',purpose:'把相同主题放进不同画幅。',action:`围绕${subjects[scene]}，分别拍横幅和竖幅；重新整理边缘，不只旋转相机。`,standard:'一对横竖照片，各有明确的主体与留白。',problem:issues[scene],start:'参数沿用当前设置，每次改变朝向后检查测光。',status:'todo',note:''});
  if(minutes>=90) out.push({id:`${scene}-${theme}-4`,title:'回到第一张',purpose:'检验本次观察带来的改变。',action:'回到第一个主体或相似条件，按今天发现的问题重新拍一张。',standard:'保留开始与结束的一对照片，选出更接近预期的一张。',problem:'条件改变会影响对比；允许记录无法控制的变量。',start:'记录实际参数，不要求复制一开始的曝光。',status:'todo',note:''});
- return out;
+ return adaptTasks(out,equipment);
 }
 export const REASONS=['主体不突出','背景杂乱','时机不好','曝光不满意','构图犹豫','焦段选择','光线平淡'];
 export const REASON_THEME={'主体不突出':'composition','背景杂乱':'composition','时机不好':'selection','曝光不满意':'exposure','构图犹豫':'composition','焦段选择':'focal','光线平淡':'light'};

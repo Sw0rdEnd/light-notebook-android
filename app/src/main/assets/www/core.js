@@ -1,7 +1,7 @@
 import {generateTasks,THEMES,REASON_THEME} from './tasks.js';
 export const id=()=>crypto.randomUUID();
 export const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
-export function createSession({minutes=30,scene='street',theme='composition',day=today(),demo=false}={}){return {id:id(),minutes,scene,theme,day,demo,createdAt:new Date().toISOString(),status:'active',current:0,tasks:generateTasks(scene,theme,minutes),summary:'',issues:[],reviewedAt:null};}
+export function createSession({minutes=30,scene='street',theme='composition',day=today(),demo=false,equipment=null}={}){return {id:id(),minutes,scene,theme,day,demo,equipment:equipment?structuredClone(equipment):null,createdAt:new Date().toISOString(),status:'active',current:0,tasks:generateTasks(scene,theme,minutes,equipment),summary:'',issues:[],reviewedAt:null};}
 export async function setTask(store,s,index,status,note){const next=structuredClone(s);if(!next.tasks[index])throw new Error('任务不存在');if(status)next.tasks[index].status=status;if(note!==undefined)next.tasks[index].note=note;const pending=next.tasks.findIndex(t=>t.status==='todo');next.current=pending===-1?index:pending;await store.put('sessions',next);return next;}
 export async function finishSession(store,s){const next={...s,status:'review',finishedAt:new Date().toISOString()};await store.put('sessions',next);return next;}
 export async function saveReview(store,s,summary,issues){const next={...s,status:'done',summary:summary.slice(0,500),issues,reviewedAt:new Date().toISOString()};await store.put('sessions',next);return next;}
