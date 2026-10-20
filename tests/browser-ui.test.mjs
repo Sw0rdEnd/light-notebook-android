@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Window} from 'happy-dom';
+import {indexedDB} from 'fake-indexeddb';
+import {Store} from '../app/src/main/assets/www/db.js';
+import fs from 'node:fs/promises';
+import sharp from 'sharp';
+const page=new Window({url:'http://127.0.0.1:5173/?nativePreview=1',settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true}});
+for(const key of ['window','document','navigator','location','HTMLElement','Event','CustomEvent'])Object.defineProperty(globalThis,key,{value:key==='window'?page:page[key],configurable:true});
+delete globalThis.AndroidStorage;globalThis.indexedDB=indexedDB;globalThis.scrollTo=()=>{};
+page.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};page.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};
+const image=await fs.readFile(new URL('../app/src/main/assets/www/assets/lake.jpg',import.meta.url));globalThis.fetch=async()=>new Response(image,{headers:{'content-type':'image/jpeg'}});
+function jpegWithFocal(focal){const tiff=Buffer.alloc(64);tiff.write('II',0);tiff.writeUInt16LE(42,2);tiff.writeUInt32LE(8,4);tiff.writeUInt16LE(1,8);tiff.writeUInt16LE(0x8769,10);tiff.writeUInt16LE(4,12);tiff.writeUInt32LE(1,14);tiff.writeUInt32LE(26,18);tiff.writeUInt16LE(2,26);tiff.writeUInt16LE(0x920a,28);tiff.writeUInt16LE(5,30);tiff.writeUInt32LE(1,32);tiff.writeUInt32LE(56,36);tiff.writeUInt16LE(0x8827,40);tiff.writeUInt16LE(3,42);tiff.writeUInt32LE(1,44);tiff.writeUInt16LE(100,48);tiff.writeUInt32LE(focal,56);tiff.writeUInt32LE(1,60);return Buffer.concat([image.subarray(0,2),Buffer.from([255,225,0,72]),Buffer.from('Exif\0\0'),tiff,image.subarray(2)]);}
+URL.createObjectURL=()=>`blob:preview-${crypto.randomUUID()}`;URL.revokeObjectURL=()=>{};
+globalThis.createImageBitmap=async blob=>{const buffer=Buffer.from(await blob.arrayBuffer()),meta=await sharp(buffer).metadata();return {buffer,width:meta.width,height:meta.height,close(){}};};
+page.HTMLCanvasElement.prototype.getContext=function(){return {drawImage:image=>{this.image=image;}};};page.HTMLCanvasElement.prototype.toBlob=function(callback){sharp(this.image.buffer).resize(this.width,this.height).jpeg().toBuffer().then(bytes=>callback(new Blob([bytes],{type:'image/jpeg'})));};
+document.body.innerHTML='<div id="app"></div><div id="toast"></div><dialog id="modal"></dialog><input id="photo-input" type="file" multiple><input id="backup-input" type="file">';
+const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)];
+const wait=async check=>{for(let i=0;i<400;i++){if(check())return;await new Promise(r=>setTimeout(r,10));}throw new Error('browser UI timeout');};
+const click=async query=>{await wait(()=>$(query)&&!$(query).disabled);$(query).dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));};
+const store=new Store();await import('../app/src/main/assets/www/app.js');
+test('VS Code browser preview opens without Android bridge and supports real import, comparison table and AI placeholder',async()=>{
+ assert.ok(document.documentElement.classList.contains('preview-native'));assert.ok($('.home-actions'));assert.match(document.body.textContent,/今天，练习/);
+ await click('[data-action="nav"][data-tab="photos"]');
+ Object.defineProperty($('#photo-input'),'files',{value:[new File([jpegWithFocal(35)],'预览A.jpg',{type:'image/jpeg'}),new File([jpegWithFocal(85)],'预览B.jpg',{type:'image/jpeg'})],configurable:true});$('#photo-input').dispatchEvent(new page.Event('change',{bubbles:true}));
+ await wait(()=>$('[data-action="confirm-groups"]'));await click('#modal [data-action="close"]');assert.equal($$('.photo-cell').length,2);
+ const stored=await store.all('photos');assert.deepEqual(stored.map(p=>p.exif.focal).sort((a,b)=>a-b),[35,85]);
+ await click('[data-action="nav"][data-tab="photos"]');await click('[data-action="toggle-select"]');await click('.photo-open');const second=$$('.photo-open')[1];second.dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));await click('[data-action="compare"]');
+ assert.deepEqual($$('.comparison-table thead th').map(e=>e.textContent),['参数','A','B']);assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.parameter-diff').length,1);
+ await click('[data-action="compare-side"][data-side="0"]');assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.comparison-table tbody td').length,14);
+ await click('#modal [data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.comparison-table'));
+ await click('#modal [data-action="close"]');await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
+ const again=new Store();assert.equal((await again.all('photos')).length,2);again.close();
+});
+test.after(()=>{store.close();page.happyDOM.abort();});

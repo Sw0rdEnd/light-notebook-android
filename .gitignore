@@ -1,0 +1,33 @@
+node_modules/
+build/
+release/
+.tools/
+__pycache__/
+*.log
+signing/
+.DS_Store
+
+# Local credentials and Android signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+local.properties
+key.properties
+
+# Android and editor-generated output
+.gradle/
+.idea/
+app/build/
+*.apk
+*.aab
+
+# Local user data and scratch exports
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
