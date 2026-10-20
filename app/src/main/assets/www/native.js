@@ -1,3 +1,4 @@
+import {STORES} from './organize.js';
 const ROOT='https://appassets.androidplatform.net';
 export function nativeCall(action,payload={}){if(!globalThis.AndroidStorage)throw new Error('请通过安卓安装的《光影练习册》打开。');let out;try{out=JSON.parse(AndroidStorage.request(action,JSON.stringify(payload)));}catch{throw new Error('安卓本地存储连接失败，请关闭后重新打开应用。');}if(!out.ok){const e=new Error(out.error||'安卓本地存储操作失败');e.name=out.name||'StorageError';throw e;}return out.data;}
 class LocalPhoto{
@@ -13,7 +14,7 @@ export class NativeStore{
  async all(name){return nativeCall('all',{store:name}).map(p=>hydrate(name,p));}
  async get(name,id){return hydrate(name,nativeCall('get',{store:name,id}));}
  async put(name,item){await this.merge({[name]:[item]});return item;}
- async merge(payload){const data={},prepared=[];for(const name of ['sessions','photos','settings']){data[name]=[];for(const item of payload[name]||[]){const p=await prepare(name,item);data[name].push(p.row);if(name==='photos')prepared.push(p);}}nativeCall('merge',data);for(const p of prepared)Object.assign(p.original,hydrate('photos',p.row));}
+ async merge(payload){const data={deletions:payload.deletions||{}},prepared=[];for(const name of STORES){data[name]=[];for(const item of payload[name]||[]){const p=await prepare(name,item);data[name].push(p.row);if(name==='photos')prepared.push(p);}}nativeCall('merge',data);for(const p of prepared)Object.assign(p.original,hydrate('photos',p.row));}
  async remove(name,id){nativeCall('remove',{store:name,id});}
  async removeDemo(){nativeCall('removeDemo');}
  async clear(){nativeCall('clear');}

@@ -13,7 +13,7 @@
 | Git 远程地址 | `https://github.com/Sw0rdEnd/light-notebook-android.git`，已配置为 `origin` |
 | 手机入口 | ChatGPT 项目里的工作模式 |
 | 电脑入口 | VS Code 打开本工程 |
-| 当前交接任务 | 电脑 Git 同步已建立；下一步在手机工作模式中确认私有仓库访问 |
+| 当前交接任务 | 0.2.0 增量升级：第一阶段已通过 15 项回归，继续设备模块；详见 UPGRADE_ACCEPTANCE.md |
 
 当前进度以所在分支的代码和本文件为依据。稳定版本以合并后的 `main` 为准；任务分支中的内容在合并前标为待合并。
 

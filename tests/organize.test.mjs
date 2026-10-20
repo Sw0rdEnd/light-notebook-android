@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {indexedDB} from 'fake-indexeddb';
+import {BrowserStore} from '../app/src/main/assets/www/browser-store.js';
+import {NativeStore} from '../app/src/main/assets/www/native.js';
+import {migrateData,saveGroup,assignPhotos,deleteGroup,deletePhotos,groupStats} from '../app/src/main/assets/www/organize.js';
+import {makeBridge} from './bridge-fixture.mjs';
+globalThis.indexedDB=indexedDB;
+const jpeg=()=>new Blob([new Uint8Array([255,216,255,217])],{type:'image/jpeg'});
+const photo=()=>({id:crypto.randomUUID(),name:'test.jpg',exif:{camera:'raw original'},sessionId:null,importedAt:new Date().toISOString(),day:'2026-10-20',preview:jpeg(),thumb:jpeg(),reasons:[],liked:false,improve:false,star:false,demo:false});
+for(const backend of ['browser','native'])test(`${backend}: migrate legacy associations, multi-group, delete group without deleting binary, restart`,async()=>{
+ const bridge=backend==='native'?makeBridge():null;if(bridge)globalThis.AndroidStorage=bridge;
+ const store=bridge?new NativeStore():new BrowserStore('migration-'+crypto.randomUUID());await store.open();
+ const p=photo(),s={id:crypto.randomUUID(),createdAt:new Date().toISOString(),day:'2026-10-20',summary:'旧练习'};p.sessionId=s.id;
+ await store.merge({sessions:[s],photos:[p]});await migrateData(store);await migrateData(store);
+ const migrated=await store.all('groups');assert.equal(migrated.length,1);assert.equal((await store.all('memberships')).length,1);assert.equal((await store.get('photos',p.id)).sessionId,s.id);
+ const second=await saveGroup(store,{name:'夜景练习'});await assignPhotos(store,[p.id],second.id);await assignPhotos(store,[p.id],second.id);
+ assert.equal((await store.all('photos')).length,1);assert.equal((await store.all('memberships')).length,2);
+ await deleteGroup(store,migrated[0].id);assert.equal((await store.all('photos')).length,1);assert.equal((await store.all('memberships')).length,1);
+ const kept=await store.get('photos',p.id);assert.equal(kept.preview.size,4);assert.equal(kept.exif.camera,'raw original');
+ assert.equal(groupStats(second,[kept],await store.all('memberships')).pending,1);
+ const third=await saveGroup(store,{name:'待复盘'});await assignPhotos(store,[p.id],third.id,{moveFrom:second.id});assert.equal((await store.all('memberships')).length,1);
+ await deletePhotos(store,[p.id]);assert.equal((await store.all('memberships')).length,0);assert.equal((await store.all('photos')).length,0);
+ store.close?.();bridge?.cleanup();delete globalThis.AndroidStorage;
+});
+test('IndexedDB physical v1 upgrade preserves existing photos',async()=>{
+ const name='v1-'+crypto.randomUUID();const db=await new Promise((resolve,reject)=>{const r=indexedDB.open(name,1);r.onupgradeneeded=()=>{for(const n of ['photos','sessions','settings'])r.result.createObjectStore(n,{keyPath:'id'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+ const p=photo();await new Promise(resolve=>{const tx=db.transaction('photos','readwrite');tx.objectStore('photos').put(p);tx.oncomplete=resolve;});db.close();
+ const store=new BrowserStore(name);await store.open();await migrateData(store);assert.equal((await store.get('photos',p.id)).preview.size,4);assert.equal((await store.get('settings','data-version')).value,2);store.close();
+});

@@ -13,12 +13,13 @@ import java.util.*;
 
 /** Native durable store. JSON metadata in SQLite; JPEGs in files/photos, never cache or WebView. */
 public final class LocalStore extends SQLiteOpenHelper {
+    private static final String[] STORES={"sessions","photos","settings","groups","memberships","imports","equipment","kits","catalog"};
     private final File photos;
     private final Map<String, File> writing = new HashMap<>();
     private final Set<String> staged = new HashSet<>();
     private final MainActivity owner;
     public LocalStore(MainActivity context) {
-        super(context, "light-journal.db", null, 1);
+        super(context, "light-journal.db", null, 2);
         owner = context;
         photos = new File(context.getFilesDir(), "photos");
         if (!photos.exists() && !photos.mkdirs()) throw new IllegalStateException("无法创建照片目录，手机空间可能不足。");
@@ -28,10 +29,14 @@ public final class LocalStore extends SQLiteOpenHelper {
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE records (store TEXT NOT NULL, id TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY(store,id))");
     }
-    @Override public void onUpgrade(SQLiteDatabase db,int from,int to) { throw new IllegalStateException("不支持的数据版本，请先备份。"); }
+    @Override public void onUpgrade(SQLiteDatabase db,int from,int to) {
+        // v2 adds record namespaces, not tables. Existing JPEG references stay untouched.
+        if(from==1 && to==2)return;
+        throw new IllegalStateException("不支持的数据版本，请先备份。");
+    }
     private static String storeName(String name) {
-        if (!name.equals("sessions") && !name.equals("photos") && !name.equals("settings")) throw new IllegalArgumentException("存储类型无效");
-        return name;
+        for(String valid:STORES)if(valid.equals(name))return name;
+        throw new IllegalArgumentException("存储类型无效");
     }
     private static String safeId(String value) {
         if (!value.matches("[A-Za-z0-9][A-Za-z0-9_-]{0,99}")) throw new IllegalArgumentException("记录 ID 无效");
@@ -57,7 +62,7 @@ public final class LocalStore extends SQLiteOpenHelper {
     private void commit(JSONObject payload) throws Exception {
         // Validate every referenced JPEG before opening the transaction.
         List<String> accepted = new ArrayList<>();
-        for(String name: new String[]{"sessions","photos","settings"}) {
+        for(String name: STORES) {
             JSONArray rows=payload.optJSONArray(name); if(rows==null)continue;
             for(int i=0;i<rows.length();i++) {
                 JSONObject row=rows.getJSONObject(i);safeId(row.getString("id"));
@@ -69,7 +74,9 @@ public final class LocalStore extends SQLiteOpenHelper {
         }
         SQLiteDatabase db=getWritableDatabase();db.beginTransaction();
         try {
-            for(String name:new String[]{"sessions","photos","settings"}) {
+            JSONObject deletions=payload.optJSONObject("deletions");
+            if(deletions!=null)for(String name:STORES){JSONArray ids=deletions.optJSONArray(name);if(ids!=null)for(int i=0;i<ids.length();i++)db.delete("records","store=? AND id=?",new String[]{name,safeId(ids.getString(i))});}
+            for(String name:STORES) {
                 JSONArray rows=payload.optJSONArray(name);if(rows==null)continue;
                 for(int i=0;i<rows.length();i++) {
                     JSONObject row=rows.getJSONObject(i);ContentValues v=new ContentValues();v.put("store",name);v.put("id",row.getString("id"));v.put("body",row.toString());
