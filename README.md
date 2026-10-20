@@ -7,6 +7,8 @@
 
 每次开始先读 [PROJECT_STATUS.md](PROJECT_STATUS.md)，完成后更新当前进度、验证结果和下一步，并将代码与进度文档一起提交、推送到 GitHub。AI 开发约定见 [AGENTS.md](AGENTS.md)。
 
+代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)，稳定分支 `main`。电脑 Git 已完成首次同步，手机工作模式的私有仓库访问检查见进度文档。
+
 手机 ChatGPT 项目的工作模式需要实际连接并获准访问代码仓库，才能读取或提交最新文件；旧聊天或上传文件不会自动成为仓库最新版本。无法写入仓库时，使用进度文档中的交接卡把需求带回电脑。
 
 ## 在电脑上最快启动
