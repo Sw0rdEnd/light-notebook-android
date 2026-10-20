@@ -51,7 +51,14 @@ public final class MainActivity extends Activity {
         WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.1.3");
         WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");
         web.setWebViewClient(new WebViewClient(){
-            @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {return !allowed(req.getUrl());}
+            @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
+                if(allowed(req.getUrl()))return false;
+                // Open user-activated HTTPS sources in the system browser, never inside the trusted bridge.
+                if(req.isForMainFrame() && req.hasGesture() && "https".equals(req.getUrl().getScheme())) {
+                    try{startActivity(new Intent(Intent.ACTION_VIEW,req.getUrl()));}catch(ActivityNotFoundException e){Toast.makeText(MainActivity.this,"没有可用浏览器，请在电脑查看官方链接。",Toast.LENGTH_LONG).show();}
+                }
+                return true;
+            }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest req) {return localResponse(req.getUrl());}
             @Override public void onReceivedError(WebView view,WebResourceRequest req,WebResourceError error){if(req.isForMainFrame())runOnUiThread(()->Toast.makeText(MainActivity.this,"应用页面加载失败，请关闭后重新打开。",Toast.LENGTH_LONG).show());}
         });
