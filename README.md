@@ -1,14 +1,14 @@
 # 光影练习册 · 0.2.2（动效升级源码，待合并）
 
-**后台与账户0.4.0已加入本地任务分支**：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。GitHub本轮重试仍返回403，尚未推送。
+**后台与账户0.4.0已同步到GitHub任务分支** `feat/admin-console-20261022`（待合并）：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。用户补装ChatGPT Codex Connector后写入已恢复；电脑直接获取此远端分支，避免重复应用旧补丁。
 
-**服务器部署准备已加入本地任务分支**：Node24 + Caddy + Docker Compose，支持配置DeepSeek单图/双图分析。入口见[SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md)和[验收边界](SERVER_PREP_ACCEPTANCE.md)。真实服务器与密钥尚未提供；现有公网Site和APK未更新。
+**服务器部署准备已同步到同一任务分支**：Node24 + Caddy + Docker Compose，支持配置DeepSeek单图/双图分析。入口见[SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md)和[验收边界](SERVER_PREP_ACCEPTANCE.md)。真实服务器与密钥尚未提供；此次源码同步没有更新已发布摄影Site或APK。另有[后台交互预览](https://light-notebook-admin-preview.clever-ocean-1537.chatgpt.site)，仅所有者可访问，全部使用浏览器演示数据，正式后台待服务器部署。
 
 在原有 Android 工程上增量升级的摄影训练、照片整理与作品复盘应用。电脑预览与 APK 共用前端；手机和电脑的数据各自保存在本机，暂不自动共享，使用备份迁移。
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
 
-0.2.2本轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。本轮GitHub写入返回403，尚未推送；交付Git补丁，电脑应用方式见验收文档。目前只有源码，云端没有原升级签名，**没有新的可安装APK**；电脑保留原signing目录后可构建versionCode7。0.2.1安装包不会自动获得新动效。
+0.2.2本轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。源码现已同步上述GitHub任务分支，旧验收文档中的403与补丁交付是历史记录，以[当前进度](PROJECT_STATUS.md)为准。目前云端没有原升级签名，**没有新的可安装APK**；电脑保留原signing目录后可构建versionCode7。0.2.1安装包不会自动获得新动效。
 
 0.2.1新增：常见设备型号随应用预置，添加设备时按类型、品牌、具体型号直接选择；全局下拉框统一为手机底部面板 / 电脑浮层，支持搜索、选中状态和键盘操作。界面更新为浅色圆角卡片与玫红强调色，同时保留深色主题。详见[本次验收](UI_CATALOG_ACCEPTANCE.md)与[完整内置型号清单](EQUIPMENT_CATALOG.md)。
 
