@@ -45,10 +45,15 @@ public final class MainActivity extends Activity {
             NavIcon mark=new NavIcon(this,key);item.addView(mark,new LinearLayout.LayoutParams(dp(24),dp(24)));navIcons.put(key,mark);
             TextView label=new TextView(this);label.setText(tab[1]);label.setTextSize(12);label.setGravity(Gravity.CENTER);label.setSingleLine(true);label.setIncludeFontPadding(false);item.addView(label,new LinearLayout.LayoutParams(-1,dp(22)));navLabels.put(key,label);
             item.setContentDescription(tab[1]);item.setFocusable(true);item.setClickable(true);item.setOnClickListener(v->{if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('android-navigation',{detail:"+JSONObject.quote(key)+"}));",null);});
+            item.setOnTouchListener((v,event)->{
+                if(event.getActionMasked()==MotionEvent.ACTION_DOWN)animateNavigationPress(v,true);
+                else if(event.getActionMasked()==MotionEvent.ACTION_UP||event.getActionMasked()==MotionEvent.ACTION_CANCEL)animateNavigationPress(v,false);
+                return false; // Preserve Android click, accessibility and cancellation handling.
+            });
             navigation.addView(item,new LinearLayout.LayoutParams(0,-1,1f));
         }
         root.addView(navigation,new LinearLayout.LayoutParams(-1,dp(64)));setContentView(root);setNavigation("practice","light");
-        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.1");
+        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.2");
         WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
@@ -80,6 +85,12 @@ public final class MainActivity extends Activity {
         web.loadUrl(ORIGIN+"/assets/index.html");
     }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
+    private void animateNavigationPress(View item,boolean down){
+        item.animate().cancel();
+        if(!android.animation.ValueAnimator.areAnimatorsEnabled()){item.setScaleX(1f);item.setScaleY(1f);return;}
+        item.animate().scaleX(down?.91f:1f).scaleY(down?.91f:1f).setDuration(down?80:360)
+            .setInterpolator(down?new android.view.animation.DecelerateInterpolator():new android.view.animation.OvershootInterpolator(1.15f)).start();
+    }
     public void setNavigation(String tab,String theme){
         if(!navLabels.containsKey(tab))return;
         runOnUiThread(()->{

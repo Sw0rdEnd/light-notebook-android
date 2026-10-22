@@ -1,6 +1,6 @@
 # Android R0 交接 · 2026-10-20
 
-> 以下0.1.x及0.2.0段落保留为历史记录；当前权威状态为文末「0.2.1预置型号与界面」及PROJECT_STATUS.md。
+> 以下0.1.x及0.2.0段落保留为历史记录；当前权威状态为文末「0.2.2流畅动效源码」及PROJECT_STATUS.md。
 
 用户新增请求：「做成 apk 文件，使用安卓手机存储」。本轮保持原有 R0 功能，仅将本地存储、文件选择与导出适配到 Android。
 
@@ -91,3 +91,11 @@ versionCode6/versionName0.2.1，安装包release/光影练习册_Android_v0.2.1.
 choice-picker.js统一增强全部select，保留原表单数据和change事件，显示手机底部面板/电脑浮层；多选分组明确确认/取消。嵌套面板可用cancel/Escape或android-back关闭最上层，不会误关设备/照片编辑弹窗。原生导航、系统栏和WebView背景配合新的浅色/深色主题，仍保留原insets与键盘隐藏底栏逻辑。
 
 本次30项Node、真实Edge桌面/手机尺寸6条流程、10项Java检查通过；APK编译/D8/签名/zipalign及逐文件资源/0.2.0证书一致性检查通过。截图release/qa-ui；详细操作验收见UI_CATALOG_ACCEPTANCE.md。真机安装、软键盘和实际系统栏仍按用户之前选择留待连接设备后，不能用Edge手机尺寸模拟代替。
+
+## 0.2.2流畅动效源码（2026-10-21，待合并、待签名）
+
+- 基于main@6b1b5e7，在feat/fluid-motion-20261021增量接入motion.js/motion.css。网页/APK共用按钮、选择面板和页面动效，原生四项底栏增加按压与松手回弹，原系统选图和业务点击路径保留。
+- versionName0.2.2/versionCode7；包名、升级签名要求、SQLite user_version2、备份版本2和照片路径不变。sw.js缓存加入新资源并更新修订。
+- 本轮30项Node、12条真实Chromium桌面/手机流程、10项Java选图检查通过；Java/API35编译、D8、未签名APK对齐成功。
+- 当前云端没有原signing/light-journal.jks和密码文件，构建在签名前停止；没有生成替代签名，没有可安装新APK。不能把build/aligned.apk当成已签名交付。
+- 下一步在电脑使用原私有签名构建，按MOTION_ACCEPTANCE.md预览并覆盖升级验收，重点确认系统减少动画、原生底栏快速操作、选择面板短/长拖动、返回键、软键盘及安全区域。尚未安卓真机验收。

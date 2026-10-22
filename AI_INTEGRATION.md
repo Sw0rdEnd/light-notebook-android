@@ -1,6 +1,6 @@
-# AI 评价扩展约定 · v1
+# AI 评价扩展约定 · v1（含服务器预备实现）
 
-本版只预留接口。真实生产路径没有服务端、网络传输、API Key 或模型调用；照片不离开设备。
+当前已发布的0.2.2 Site和APK仍只预留接口。2026-10-21的本地服务器预备版新增server/及ai-http.js/ai-ui.js：配置完成后，用户确认上传才将选定副本提交DeepSeek。未配置时明确返回尚未启用；真实密钥调用尚未验收。
 
 ## 已实现的调用路径
 
@@ -82,11 +82,29 @@
 
 `preferred`可为A、B、tie或null；单张评价使用null。`basis`只接受observation、exif和inference；旧provider未填写时降为inference，非法类别拒绝。请求ID/schema不符、结构错误会被拒绝。后续结果界面必须显示证据类别并转义文字，不能将第三方HTML插入页面。
 
-## 下一轮接入要补齐
+## 后续接入待验证
 
-- 选择实际服务并实现 provider 的二进制图片传输、超时/取消/重试与错误提示。
-- APK 当前无网络权限，若要真实联网需在实现时加入 INTERNET 权限并提供对应传输路径；只修改 endpoint 字符串不会让本版联网。
+- 服务器网页版已实现以下适配，但真实服务器、域名HTTPS、DeepSeek账户模型权限/余额及真实图片分析尚未联调，不自动重试付费请求。
+- APK当前无网络权限，若要原生联网需另行加入INTERNET权限和对应传输路径、隐私说明，并用原签名重新构建。
 - 不把服务端 API Key 写进前端、APK 或版本库。
-- 将 ok 结果保存和展示在对应照片/练习中。本版只有未接入结果的 UI，不宣称完整 AI 功能已完成。
+- 当前正式Site和APK没有AI结果界面更新；服务器预备版已保存到对应照片，真实服务验证通过后才部署上线。
 
 回归测试中的示例 provider 只验证接口契约，不是可用的在线评价服务。
+
+## 2026-10-21服务器实现
+
+- 原buildEvaluationRequest/provider/validateEvaluationResult契约保留；默认requestEvaluation仍不自动联网。新网页UI先访问同源GET /api/ai/status，启用后经访问口令与上传同意，显式选择HTTP provider。
+- POST /api/ai/evaluate使用light-journal.ai-upload.v1协议，实际传输1–2个JPEG data URL；过滤GPS、原文件名与本地路径，只发送相关参数、修正、问题与练习上下文。
+- 服务端固定调用https://api.deepseek.com/chat/completions，默认deepseek-flash、thinking.type=disabled、response_format=json_object，按官方Vision/JSON Output协议传真实image_url块。客户端不能指定上游URL，服务端不抓取客户端外部图片URL。
+- 模型返回经请求ID、schema、结构和证据类别检查后，转义显示并保存在照片aiReview字段，重新查看不再调用。备份包含该普通元数据字段，旧版本UI不显示AI结果。
+- 独立共享AI访问口令在当前页面内存中使用，不写入照片、备份或浏览器持久存储；DeepSeek API Key只在服务器环境中。默认AI关闭、日50次/分钟6次/并发2；台账持久化，失败尝试也计入保守次数。
+- 未申请APK联网权限，因此APK仍走尚未接入提示；本次不要将其描述为原生AI上线。
+- 完整操作、限制与部署见SERVER_DEPLOYMENT.md；本轮模拟接口/网页测试与真实付费服务验证分别记录。
+
+## 2026-10-22后台与账户扩展
+
+服务器0.4.0新增账户Cookie+CSRF方式调用AI；登录状态从同源status接口获取，单次上传同意仍保留。个人与全站次数同时限制，停用/撤销权限后不能继续新请求。旧共享口令可由管理员显式启用，归为无个人归属的共享调用。
+
+提供商返回usage在解析模型结果前记录，输入/输出/缓存token分开保存；超时等没有完整usage时标为未知，不能据此推断未计费。元数据升级保留旧调用记录；token字段未知的旧记录不补造数值。
+
+账户、云备份、管理界面和初始化/运维见ADMIN_SYSTEM.md；当前正式Site和APK仍未更新，真实服务待联调。

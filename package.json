@@ -1,14 +1,19 @@
 {
   "name": "light-notebook-android",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
+    "test": "node scripts/build-server-web.mjs && node --test tests/*.test.mjs",
     "dev": "node scripts/dev-server.mjs",
     "start": "node scripts/dev-server.mjs",
     "preview": "node scripts/dev-server.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "build:web": "node scripts/build-server-web.mjs",
+    "start:server": "node server/index.mjs",
+    "test:server": "node scripts/build-server-web.mjs && node --test tests/server*.test.mjs tests/ai-http.test.mjs",
+    "test:admin": "node scripts/build-server-web.mjs && node --test tests/admin-server.test.mjs",
+    "test:admin:browser": "node scripts/build-server-web.mjs && playwright test -c playwright.admin.config.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

@@ -1,5 +1,6 @@
 // One accessible picker for every select. Native controls keep the form contract;
 // the visible interaction uses a searchable list / mobile bottom sheet.
+import {presentDialog,dismissDialog,enableSheetDrag} from './motion.js';
 const bindings=new WeakMap();
 let active=null,sequence=0;
 const fold=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/α/g,'a').replace(/[\s\-–—_|()./]/g,'');
@@ -34,11 +35,11 @@ export function enhanceSelects(root=document){
     button.addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();openPicker(select);}});
   }
 }
-export function closePicker(restoreFocus=true){
+export function closePicker(restoreFocus=true,onClosed=()=>{}){
   if(!active)return false;
-  const previous=active;active=null;previous.dialog.close();previous.dialog.remove();
+  const previous=active;active=null;previous.dialog.removeAttribute('id');
   previous.button.setAttribute('aria-expanded','false');
-  if(restoreFocus&&previous.button.isConnected)previous.button.focus({preventScroll:true});
+  dismissDialog(previous.dialog,()=>{previous.dialog.remove();if(!active){if(restoreFocus&&previous.button.isConnected)previous.button.focus({preventScroll:true});onClosed();}});
   return true;
 }
 export function pickerOpen(){return !!active;}
@@ -68,7 +69,7 @@ function openPicker(select){
   if(options.length>=8){search=document.createElement('input');search.className='field choice-search';search.type='search';search.placeholder='搜索选项 / 型号';search.setAttribute('aria-label','搜索'+binding.title);search.addEventListener('input',()=>paint(search.value));surface.append(search);}
   surface.append(list);
   function commit(){
-    closePicker(false);if(!select.isConnected)return;
+    closePicker(false,()=>{const updated=select.id?document.getElementById(select.id):select;bindings.get(updated)?.button.focus({preventScroll:true});});if(!select.isConnected)return;
     for(const option of options)option.selected=selected.has(option.index);
     sync(select);select.dispatchEvent(new Event('input',{bubbles:true}));select.dispatchEvent(new Event('change',{bubbles:true}));
     const updated=select.id?document.getElementById(select.id):select;bindings.get(updated)?.button.focus({preventScroll:true});
@@ -80,6 +81,7 @@ function openPicker(select){
   dialog.addEventListener('cancel',e=>{e.preventDefault();closePicker();});
   dialog.addEventListener('click',e=>{if(e.target===dialog)closePicker();});
   dialog.addEventListener('keydown',e=>{const buttons=[...list.querySelectorAll('button:not(:disabled)')];const current=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?buttons.length-1:e.key==='ArrowDown'?(current+1)%buttons.length:(current-1+buttons.length)%buttons.length;buttons[next]?.focus();}});
-  paint();dialog.showModal();
+  enableSheetDrag(dialog,surface,head,()=>closePicker());
+  paint();presentDialog(dialog);
   if(search&&matchMedia('(min-width:701px)').matches)search.focus();else (list.querySelector('[aria-selected="true"]')||list.querySelector('button')||cancel).focus({preventScroll:true});
 }

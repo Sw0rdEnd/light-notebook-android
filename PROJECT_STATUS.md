@@ -1,6 +1,6 @@
 # 光影练习册：当前进度与跨端交接
 
-更新日期：2026-10-20（Asia/Hong_Kong）
+更新日期：2026-10-22（Asia/Shanghai）
 
 此文件记录接续开发需要的当前状态。手机 ChatGPT 工作模式和电脑 VS Code 都应先读它，再修改代码，结束时更新它。完整聊天记录不自动写入此文件。
 
@@ -8,41 +8,47 @@
 
 | 项目 | 当前情况 |
 | --- | --- |
-| 代码来源 | 本地 `light-notebook-android` 工程，`main` 跟踪 `origin/main` |
-| GitHub 仓库 | [Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)，用户已确认设为私有；电脑 Git 已完成首次推送 |
+| 代码来源 | 手机云端从 `main@6b1b5e7` 接续；当前本地任务分支 `feat/admin-console-20261022`，包含动效、服务器准备和后台0.4.0，未推送 |
+| GitHub 仓库 | [Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)，用户于2026-10-21改为公开；手机云端已成功读取并克隆 |
 | Git 远程地址 | `https://github.com/Sw0rdEnd/light-notebook-android.git`，已配置为 `origin` |
 | 手机入口 | ChatGPT 项目里的工作模式 |
 | 电脑入口 | VS Code 打开本工程 |
-| 当前交接任务 | 0.2.1扩充预置具体型号与全局UI，交付APK、型号清单和验收步骤；详见UI_CATALOG_ACCEPTANCE.md |
+| 当前交接任务 | 后台0.4.0已实现：管理员/用户、token用量、额度、私有云备份、存储管理、邮箱登录预留；等待服务器/密钥联调和GitHub写入权限。APK仍待电脑原签名构建 |
 
 当前进度以所在分支的代码和本文件为依据。稳定版本以合并后的 `main` 为准；任务分支中的内容在合并前标为待合并。
 
 ## 应用当前状态
 
-- Android版本：0.2.1，versionCode6；包名`cn.xiaohuang.lightjournal`，SQLite user_version2，语义数据版本2不变。
-- 网页预览与 APK 共用前端；Android 使用 SQLite 和本地 JPEG，浏览器使用 IndexedDB。
+- 当前任务源码：0.2.2，versionCode7（待合并、待签名APK）；上次已交付Android版本0.2.1/versionCode6；包名`cn.xiaohuang.lightjournal`，SQLite user_version2，语义数据版本2不变。
+- 网页预览与 APK 共用摄影前端；Android 使用 SQLite 和本地 JPEG，浏览器使用 IndexedDB。服务器版0.4.0另有/admin/后台和/account/账户，支持主动云备份。
 - 自定义分组支持简介、封面、排序和名称搜索；照片通过多对多关联加入多个分组，批量归组、移出、移动与快速选片均已接入。
 - JPEG导入有逐张进度、内容指纹去重、持久导入记录与明确失败原因。旧练习照片自动迁移为对应分组，保留原sessionId和照片文件。
 - 我的设备支持多机身/镜头/手机、拥有/想了解、停用、购买备注、命名组合及默认组合。内置资料库78条、61个具体型号、8品牌，按类型→品牌→具体型号即可添加，不需要用户导入；中文名与A7M4等简称可搜。
 - 全局下拉统一为手机底部选择面板、电脑浮层，长列表可搜，分组多选有勾选与确认/取消。采用浅色圆角卡片、玫红强调色及照片双列布局，保留已保存的深色主题。
 - EXIF逐张识别，别名歧义保留未识别；用户修正独立保存。作品库设备/焦段/日期筛选、新任务设备适配、对比联动缩放/位置及选片复盘已实现。
 - v2备份含分组、设备组合、任务、导入与复盘，兼容v1；仅记录与含压缩照片副本明确区分。缺图有占位，同指纹原文件可重导入补图。
-- AI 评价只预留接口，返回 `not_configured`，尚未接入真实服务。
-- 原网页 Site 与本地 Android 工程是分别交付的版本；改仓库代码后需要分别更新网页部署或重建 APK。
+- 当前已发布Site和APK的AI仍未接入；本地服务器预备版已实现真实图片传输与DeepSeek适配，默认关闭，尚未使用真实密钥验证。
+- 原网页Site已于2026-10-21升级到0.2.2，地址 https://light-notebook-xh.clever-ocean-1537.chatgpt.site ，随后按用户要求改为公开链接。服务器准备不改动这个站点。网页与Android工程分别交付；改仓库代码后需要分别部署网页或重建APK。
 
 ## 验证与待办
 
 | 项目 | 状态 / 下一步 |
 | --- | --- |
-| 本次自动检查 | 30项Node测试、10项Java选图检查通过，含原功能、预置型号/中文检索/卡口差异及升级后的补充设备资料备份恢复 |
-| 本次浏览器检查 | 真实Edge桌面1440×1000和手机393×852共6条流程通过，无未处理JS异常和横向溢出；新增截图在release/qa-ui |
-| APK构建检查 | 已构建0.2.1，核对包名/版本、全部内置资源、签名与0.2.0证书一致；不代表安卓运行验收 |
+| 0.2.1自动检查（上轮记录） | 30项Node测试、10项Java选图检查通过，含原功能、预置型号/中文检索/卡口差异及升级后的补充设备资料备份恢复 |
+| 0.2.1浏览器检查（上轮记录） | 真实Edge桌面1440×1000和手机393×852共6条流程通过，无未处理JS异常和横向溢出；新增截图在release/qa-ui |
+| 0.2.1 APK构建（上轮记录） | 已构建0.2.1，核对包名/版本、全部内置资源、签名与0.2.0证书一致；不代表安卓运行验收 |
 | 安卓真机 | 用户明确选择暂不连接设备，先交付APK和验收步骤；待验证覆盖升级、系统选图、底栏/安全区域/软键盘、备份保存与重启 |
-| AI 评价 | 接口已预留，真实模型和服务待后续需求确定 |
+| AI 评价 | 服务器预备版有单图/双图上传同意、口令、真实图片块、结构化结果、本地保存；模拟接口通过，真实DeepSeek密钥和公网部署待验证；现有Site/APK未上线AI |
 | 设备资料限制 | 78个条目仍非全量，未收录器材可手动添加；未核实价格/部分OM字段显示未知；无官方图片分发许可时使用明确的类别图标及官网链接 |
-| GitHub 同步 | 电脑Git已登录，代码和交接文档推送到origin；手机工作模式的私有仓库访问仍需单独配置 |
+| GitHub 同步 | 手机已成功读取公开仓库并克隆；本轮代码与交接文档已本地提交；2026-10-22实测CLI推送无凭据；GitHub连接创建分支返回403 Resource not accessible by integration。未推送/未创建PR；交付完整源码、Git补丁与本地分支bundle，电脑可接续推送 |
+| 0.2.2本轮检查 | 30项Node、原6条和新增6条真实Chromium桌面/手机流程通过；10项Java选图检查通过；API35编译/D8/未签名包对齐成功 |
+| 0.2.2交付限制 | 云端没有原升级签名，构建在签名前停止；未创建替代签名，未交付可安装新APK，待电脑构建和安卓真机验收 |
+| 服务器预备版本轮检查 | 42项Node测试通过；桌面/手机14条浏览器流程均通过，含新增AI上传同意、真实JPEG编码、结果转义、保存/重开；服务CLI启动/健康/资源/优雅退出通过；Compose及Caddy配置校验、shell语法通过 |
+| 后台0.4.0本轮检查 | 50项Node测试通过；新增2条后台桌面/手机完整流程及原14条浏览器回归通过；Compose/Caddy和shell语法校验通过；使用临时账户与模拟AI，未产生真实API费用 |
+| 后台0.4.0边界 | 账户与云备份仅服务器网页版；邮箱仅字段/禁用入口/明确503接口，没有发信；无自动相册同步；真实服务器/Docker/证书/付费API/Android仍待验收 |
+| 服务器预备版验证边界 | 未提供服务器、域名及真实密钥；本环境没有Docker守护进程，未构建/运行容器，未申请公网证书，未产生真实API调用费用；交付含完整源码和接续补丁的部署ZIP |
 
-电脑默认Node20可运行无依赖预览，完整测试本次使用工程内Node24；APK本次使用已有IntelliJ Java21、便携Python与官方API35/Windows Build Tools35构建。下一步按[安卓验收清单](UPGRADE_ACCEPTANCE.md)覆盖安装；不要卸载旧版。应用照片与记录暂不跨设备自动同步，GitHub只同步代码和文档。
+电脑默认Node20可运行无依赖预览，完整测试本次使用工程内Node24；APK本次使用已有IntelliJ Java21、便携Python与官方API35/Windows Build Tools35构建。下一步按[安卓验收清单](UPGRADE_ACCEPTANCE.md)覆盖安装；不要卸载旧版。应用照片与记录暂不跨设备自动同步；服务器版可主动云备份/下载迁移，GitHub只同步代码和文档。
 
 ## 两端怎么接续
 
@@ -106,8 +112,76 @@
 | `ANDROID_HANDOFF.md` | 历史 Android 技术交接与修复缘由 |
 | `WEB_R0_REFERENCE.md` | 原网页 R0 历史参考 |
 | `AI_INTEGRATION.md` | AI 接口协议与后续接入位置 |
+| `ADMIN_SYSTEM.md` | 后台/账户初始化、用户权限、用量、私有云备份、邮箱登录预留与验证边界 |
+| `SERVER_DEPLOYMENT.md` | 自有服务器首次部署、AI配置、迁移、维护、备份与回滚 |
+| `SERVER_PREP_ACCEPTANCE.md` | 服务器准备验证结果、未验证项与电脑接续方式 |
 
 ## 最近交接
+
+### 2026-10-22：按用户要求再次尝试GitHub推送
+
+- 重试 `git push --set-upstream origin HEAD:refs/heads/feat/admin-console-20261022`，退出128：`could not read Username for 'https://github.com': terminal prompts disabled`，云端Git没有可用登录凭据。
+- GitHub连接确认当前账号为Sw0rdEnd，仓库private=false、账号permissions.push=true；连接的创建分支请求仍返回403 `Resource not accessible by integration`。账号权限与本次应用连接的有效授权须区分，无法仅凭公开仓库或账号push标记断言连接可以写入。
+- 未创建远程任务分支、未推送提交，也未改动远程main。原有未提交的后台预览文件保持原样；下一步需要恢复该连接的代码写入能力或在已认证的电脑接续代码后推送。
+
+### 2026-10-22：独立后台交互预览已发布
+
+- 用户要求重试并查看后台。复用此前已创建、尚未发布的独立预览Site `appgprj_6ad9d95e3a28819192c730b679746711`，保留仅所有者访问；未改动原公开摄影应用。
+- 预览地址：https://light-notebook-admin-preview.clever-ocean-1537.chatgpt.site 。Sites发布接口实际返回succeeded，部署ID `appgdep_6ad9dbb83efc8191ab4dae8ffc84cbb6`，源码提交 `1c7cc8cd373b5195972880a202750211180eca2d` 已同步到该Site绑定源码仓库。这不代表GitHub主工程推送成功。
+- 复用0.4.0后台界面，独立浏览器演示层支持管理员/用户视角、示例用户新建编辑、用量筛选、额度设置、示例备份增删下载、操作记录和重置。顶部持续明确标注示例数据；修改仅保存在当前浏览器。没有真实AI、真实账户登录、发信、照片上传或云文件存储；演示下载不可恢复正式数据。
+- 发布源码保存在 `/workspace/sites/light-notebook-admin-preview-review`。原 `/workspace/sites/light-notebook-admin-preview` 在接续时出现其他任务写入，已保留其文件；本工程未提交的 `scripts/build-admin-preview.mjs`、`tests/admin-preview.test.mjs`、`web/admin-preview/` 也保持原样，未纳入本次发布或提交。
+- 本轮实际验证：6项Node演示逻辑检查通过；真实云浏览器验证创建用户、额度保存、用户用量筛选、用户视角和示例备份添加/删除、操作记录。桌面宽1363px无页面溢出；393×852 iframe检查响应式布局与导航/设置。未做真实安卓触控、生产服务器、真实API、邮箱或APK验收。
+- 正式0.4.0服务依赖Node24/SQLite，当前Sites未运行该服务器；等待自有服务器到位后按ADMIN_SYSTEM.md部署正式服务并初始化管理员。
+
+### 2026-10-22：后台、账户和私有云备份0.4.0（待部署/未推送）
+
+- 用户要求先推送，再新增后台检测API用量、设置用户和存储，并预留邮箱登录。先尝试Git CLI推送feat/server-prep-20261021，失败为无用户名凭据；连接API创建任务分支仍403。远程main确认仍为6b1b5e7，没有远程分支被创建或更新。随后在独立本地分支feat/admin-console-20261022继续已授权开发。
+- 新增web/console/：独立响应式/admin/后台、/account/个人账户。提供总览、近14天请求/token/状态、按用户筛选、用户与角色/启停/重置密码/个人日额度/空间、服务设置、云文件管理及操作记录。
+- 新增accounts.mjs、control-api.mjs、storage.mjs、bootstrap-admin.mjs；复用Node24/SQLite，不新增运行依赖。密码scrypt、Cookie会话哈希/8小时有效期、来源+CSRF、权限、登录频率限制、会话撤销和最后一个管理员保护均实现。仅终端可首次初始化管理员，没有默认密码。
+- AI加入账户身份与个人次数，保留可显式启用的旧共享口令兼容；实际usage记输入/输出/缓存token，未知用量保持未知。共享调用归属单列。后台设置持久化、立即影响新请求；密钥只在服务器环境，不经后台读取/写入。
+- 用户可主动上传/下载/删除有效JSON云备份，后台查看空间及文件元数据、删除文件；不是自动相册同步。默认全站1024MB、用户100MB、单份16MB，每人200份/全站10000份，个人/全站配额事务复核，私有UUID对象不映射静态目录。浏览器本地照片仍不按账户自动隔离，不自动上传或恢复。
+- 邮箱保留唯一字段和未验证状态；登录页显示待启用，/api/auth/email/request明确503，未接入发信或验证码验证，不宣称邮箱可登录。
+- 更新Docker/build/Caddy/健康检查/.env：默认启用账户、AI关闭、共享口令关闭。deploy/backup.sh改为短暂停app、打包完整数据卷和配置，涵盖账户与云备份；镜像server-schema=1标签用于避免将不兼容的0.3镜像标为回滚目标。旧attempts表增量加列保留原记录。
+- 本轮实际检查：50项Node测试全部通过；新增真实浏览器桌面/手机后台流程2条通过，覆盖建/改用户、登录、设置、云备份上传下载隔离/管理员删除、账户单图AI与token核对；原14条浏览器流程全部通过。联调修复关闭弹窗后残留表单、HTML用户名pattern兼容；手机测试选择可见的退出按钮。中文字体补齐后作桌面/手机视觉检查，无页面横向溢出或未处理JS/CSP异常。
+- 管理员CLI实际创建/重置密码、服务进程启动/完整资源smoke和CLI创建账户HTTP登录通过；没有输出密码。Compose 5.6.0/Caddy 2.11.7静态配置、sh -n和git diff --check通过。没有Docker守护进程、真实服务器、真实密钥；没有新APK/公网后台部署/真实邮件发送。正式0.2.2 Site保持公开网址与原功能。
+- 交付完整源码包及相对main@6b1b5e7的mobile-changes.patch、任务分支bundle。电脑在保留自己修改与signing/的前提下，可从bundle取任务分支，确认后用有写入权限的登录推送。详见ADMIN_SYSTEM.md和包内PACKAGE_INFO.txt。
+- 下一步：恢复GitHub代码写入能力后推送任务分支/开PR；服务器到位按部署文档构建、初始化管理员、关闭AI先验收账户/云备份，再在服务器配置密钥启用少量真实AI。后续邮箱登录需另接发信、一次性验证码与绑定/找回流程。
+
+### 2026-10-21：2核4GB服务器准备（待服务器部署）
+
+- 用户准备购买2核4GB服务器，要求先准备环境。独立分支feat/server-prep-20261021基于本地e3cf9a4继续；未部署到未知服务器，也没有改动现有公开Site。
+- 新增server/：Node24网页/API、DeepSeek图片与JSON适配、固定上游和非思考模式、1–2张JPEG与输入/输出校验、访问口令/同源/大小/并发/分钟/日额度限制、超时/取消、SQLite持久调用台账和在线备份。运行时无额外npm依赖。
+- 新增ai-http.js/ai-ui.js并接app.js：先检查状态、再明确同意发送压缩副本和必要参数；口令仅页面内存、计费密钥只在服务器；结果转义并保存到照片aiReview，可重看而不重复调用。APK仍提示尚未接入；没有新增Android网络权限。
+- 新增Dockerfile、compose.yaml、.env.example、deploy/和build-server-web.mjs：默认AI关闭，Node24+Caddy、资源/日志限制、自动HTTPS配置、构建/启动前检查、健康检查、备份与回滚。服务器网页保留light-notebook-r0数据库名，文案按主动AI上传更新；新域名仍需应用内备份迁移。
+- 本轮42项Node测试全部通过，含12项新增客户端/服务端检查。14条真实Chromium桌面/手机流程均验证通过；首轮手机workspace流程因测试未等待整理保存而超时，补充等待保存成功再操作设备修正后定向复测通过。原功能断言保留。
+- 另外实际启动server/index.mjs，smoke检查健康、状态、首页和资源并优雅退出；Docker Compose 5.6.0静态配置校验、Caddy 2.11.7配置校验、sh -n及git diff --check通过。未把配置校验当作镜像构建、证书或真实API验收。
+- GitHub此前写入403且CLI无凭据，本次仍只本地提交；部署ZIP含完整源码和相对main@6b1b5e7的mobile-changes.patch，电脑可在独立分支应用后推送，勿与旧0.2.2补丁重复应用。
+- 下一步：服务器提供后确认系统、域名/DNS、80/443和Docker；先以AI关闭启动并迁移一份测试备份，再在服务器填写真实密钥及独立访问口令，少量真实图片验收后使用。账号/云同步、Android联网、新签名APK均未包含。
+
+### 2026-10-21：原网页公开访问已配置
+
+- 按用户“怎么改成公开链接”的明确要求，原Site访问范围已设为public，revision2；网址不变，朋友可以直接打开。
+- 各人的照片/记录仍保存在各自浏览器，不自动共享。下方初次部署记录中的“仅所有者”是公开前的历史状态。
+
+### 2026-10-21：原网页部署0.2.2成功
+
+- 用户要求部署到网页，并询问朋友能否使用。复用原Site：appgprj_6ad72a39d68881918b040f6c1bbb4891，原网址https://light-notebook-xh.clever-ocean-1537.chatgpt.site；没有另建站点。
+- 从Site绑定源码仓库打开并升级dist，来源为本工程02793b1的0.2.2前端。保留原网页数据库名称light-notebook-r0，原位升级v1到v2，验证旧照片Blob、标记、复盘、练习关联与主题保留，并新增分组迁移。网页文案适配手机浏览器。
+- 本轮Site内32项Node检查全部通过：29项当前前端/存储回归及3项网页升级、备份往返和静态资源检查。按Sites管理环境要求，没有受支持的control-browser就不启动新预览；本轮托管网页视觉/实机/PWA尚未验收。
+- Site源码提交348bb74bc5290d836f471f27297c72c15e501d9a已推送到Sites绑定仓库；部署appgdep_6ad81532586081919b74a52019181e68返回succeeded。部署保存版本appgprj_6ad72a39d68881918b040f6c1bbb4891~appgver_f46ec3d2a0588191a1891f4b978db435。
+- 访问仍为custom，仅所有者可见；用户尚未选择公开链接或提供朋友访问名单，未扩大访问范围。多人使用时数据各自存在各自设备浏览器，不自动共享。
+- 这次Sites部署不代表GitHub写入恢复，也不代表新APK已签名。GitHub仍未推送；0.2.2补丁保留并更新交接记录。
+- 下一步：用户在原网址确认新动效和旧数据；若要朋友直接打开，按用户明确选择设置公开链接或指定账号。电脑端应用补丁后推送GitHub，并用原签名构建APK。
+
+### 2026-10-21：手机接入与0.2.2流畅交互（任务分支待合并）
+
+- 用户将仓库改为公开后，手机云端成功读取main最新提交6b1b5e7并完整克隆。确认此前私有仓库访问未生效，未使用旧ZIP覆盖昨天代码。
+- 用户希望UI更灵动、有轻回弹、更丝滑。新增motion.js/motion.css，在app.js、choice-picker.js接入可中断按压、回弹、导航选中背景、页面和弹窗过渡；手机选择面板支持顶部短拖回位、长拖关闭，保持列表原生滚动和嵌套表单内容。
+- Android原生底栏增加按压/松手反馈，保留原点击语义；减少动态效果遵守网页媒体查询及Android系统动画开关。包名、数据库版本2、备份和照片路径保留。源码版本0.2.2/versionCode7，离线资源缓存同时更新。
+- 本次实际检查：30项Node、原有6条及新增6条真实Chromium桌面/手机流程通过；10项Java选图检查；API35 Java编译/D8和未签名包zipalign成功。手机尺寸首页/叠层面板已作本地视觉检查。不是安卓真机验收。
+- 文件：motion.js、motion.css、app.js、choice-picker.js、index.html、sw.js、MainActivity.java、AndroidManifest.xml、package文件、tests/e2e/motion.spec.mjs，以及README/本文件/ANDROID_HANDOFF/MOTION_ACCEPTANCE文档。
+- 交付：本地分支feat/fluid-motion-20261021，代码与文档同一提交。GitHub写入返回403 Resource not accessible by integration，CLI无用户名凭据，未推送/未创建PR；交付光影练习册_0.2.2_灵动交互.patch。电脑应用补丁再推送，main仍为0.2.1。云端缺少原signing目录，构建按约定在签名前停止，没有生成替代证书，没有新的可安装APK。
+- 下一步：电脑在干净工作区从origin/main新建任务分支，git am应用补丁，按MOTION_ACCEPTANCE.md预览手感；认可后推送/合并。用电脑现有私有升级签名构建0.2.2，备份后覆盖安装，真机检查帧率、快速连点、返回/软键盘、安全区域和原数据。AI/云同步/官方图许可的既有待办保留。
 
 ### 2026-10-20：0.2.1预置型号与全局选择界面
 

@@ -1,8 +1,14 @@
-# 光影练习册 · 0.2.1
+# 光影练习册 · 0.2.2（动效升级源码，待合并）
+
+**后台与账户0.4.0已加入本地任务分支**：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。GitHub本轮重试仍返回403，尚未推送。
+
+**服务器部署准备已加入本地任务分支**：Node24 + Caddy + Docker Compose，支持配置DeepSeek单图/双图分析。入口见[SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md)和[验收边界](SERVER_PREP_ACCEPTANCE.md)。真实服务器与密钥尚未提供；现有公网Site和APK未更新。
 
 在原有 Android 工程上增量升级的摄影训练、照片整理与作品复盘应用。电脑预览与 APK 共用前端；手机和电脑的数据各自保存在本机，暂不自动共享，使用备份迁移。
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
+
+0.2.2本轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。本轮GitHub写入返回403，尚未推送；交付Git补丁，电脑应用方式见验收文档。目前只有源码，云端没有原升级签名，**没有新的可安装APK**；电脑保留原signing目录后可构建versionCode7。0.2.1安装包不会自动获得新动效。
 
 0.2.1新增：常见设备型号随应用预置，添加设备时按类型、品牌、具体型号直接选择；全局下拉框统一为手机底部面板 / 电脑浮层，支持搜索、选中状态和键盘操作。界面更新为浅色圆角卡片与玫红强调色，同时保留深色主题。详见[本次验收](UI_CATALOG_ACCEPTANCE.md)与[完整内置型号清单](EQUIPMENT_CATALOG.md)。
 
@@ -42,8 +48,8 @@ Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | `release/光影练习册_Android_v0.2.1.apk` |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode 6 |
+| APK | 上次已交付0.2.1；本次0.2.2待电脑原签名构建 |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / 源码versionCode7（旧APK为6） |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -70,14 +76,14 @@ APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 ```powershell
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.1.apk" --baseline "release/光影练习册_Android_v0.2.0.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.2.apk" --baseline "release/光影练习册_Android_v0.2.1.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
 
 `signing/`必须使用原私有升级签名并另行备份，不提交到GitHub。缺少签名时构建会明确停止，不生成替代签名。源代码修改不会自动更新已安装APK，需要重新构建并覆盖安装。
 
-本次验证：30项Node测试、6条真实Edge流程（桌面/手机尺寸）、10项Java选图检查；APK编译、签名、zipalign、资源一致性及原签名核对分别记录在验收文档。按用户要求先交付APK，安卓真机运行验收留待设备连接后进行。
+0.2.1上轮验证记录：30项Node测试、6条真实Edge流程（桌面/手机尺寸）、10项Java选图检查；APK编译、签名、zipalign、资源一致性及原签名核对分别记录在验收文档。按用户要求先交付APK，安卓真机运行验收留待设备连接后进行。
 
 ## 主要代码位置
 
@@ -87,6 +93,7 @@ python scripts/verify-apk.py "release/光影练习册_Android_v0.2.1.apk" --base
 | `organize.js` / `workspace-ui.js` | 分组、迁移、批量整理与导入界面 |
 | `equipment-data.js` / `equipment.js` / `equipment-ui.js` | 官方来源快照、设备规则与设备界面 |
 | `equipment-presets.js` / `catalog-search.js` | 常见具体型号、卡口版本和中文/简称搜索 |
+| `motion.js` / `motion.css` | 全局轻回弹、导航/页面过渡与可中断弹窗和顶部手势 |
 | `choice-picker.js` / `community.css` | 全局选择面板、照片卡片及深浅主题 |
 | `equipment-tasks.js` / `comparison-ui.js` | 任务适配、联动对比与选片复盘 |
 | `backup.js` / `backup-v2.js` | 版本化备份、完整验证与原子恢复 |
