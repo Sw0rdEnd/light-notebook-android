@@ -1,7 +1,14 @@
-// Only maintainers can add licensed images to the audited catalog. User JSON imports
-// deliberately lose image permissions. Browsing reads local cache, never scrapes a site.
+import {EQUIPMENT_PHOTO_ENTRIES} from './equipment-photo-data.js';
+// Built-in reference illustrations have fixed local paths and retained source/credit
+// metadata. Their inclusion does not grant an open license. Imported records cannot
+// claim these assets or enable arbitrary downloads; remote caching still needs a license.
+const builtins=new Map(EQUIPMENT_PHOTO_ENTRIES.flatMap(photo=>photo.recordIds.map(id=>[id,photo])));
+export function equipmentPhoto(record){
+ const photo=builtins.get(record?.id);
+ return record?.provenance==='official-specification'&&photo&&['brand','model','type'].every(key=>record[key]===photo[key])?photo:null;
+}
 export const IMAGE_CACHE='light-journal-licensed-equipment-v1';
-export function permittedImage(record){const image=record?.image;if(record?.provenance!=='official-specification'||!image?.cacheAllowed||!image.licenseUrl)return null;try{if(new URL(image.licenseUrl).protocol!=='https:')return null;}catch{return null;}
+export function permittedImage(record){const builtin=equipmentPhoto(record);if(builtin)return {bundled:builtin.bundledPath};const image=record?.image;if(record?.provenance!=='official-specification'||!image?.cacheAllowed||!image.licenseUrl)return null;try{if(new URL(image.licenseUrl).protocol!=='https:')return null;}catch{return null;}
  if(image.bundledPath&&/^assets\/equipment\/[A-Za-z0-9_/-]+\.(jpg|png|webp)$/.test(image.bundledPath))return {bundled:image.bundledPath};
  try{if(new URL(image.url).protocol==='https:')return {url:image.url};}catch{}return null;
 }

@@ -1,4 +1,4 @@
-# 光影练习册 · 0.2.5（保存整理后关闭弹窗，待合并验收）
+# 光影练习册 · 0.2.6（设备产品图片，待合并验收）
 
 **后台与账户0.4.0已同步到GitHub任务分支** `feat/admin-console-20261022`（待合并）：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。用户补装ChatGPT Codex Connector后写入已恢复；电脑直接获取此远端分支，避免重复应用旧补丁。
 
@@ -8,7 +8,9 @@
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
 
-0.2.5本轮：修复「保存整理与复盘」成功后仍停留在照片弹窗的问题。写入并刷新成功后关闭弹窗、返回照片列表；失败时保留输入并提示原因，重试成功清除旧错误。已验证标签、选片状态、分组和复盘持久保存，原签名versionCode10 APK已构建。
+0.2.6本轮：为设备资料库补齐61个具体型号的产品外观参考图，覆盖78个型号 / 卡口条目；图片随APK离线打包，卡片和详情统一适配。旧「我的设备」快照通过型号匹配显示新图片，不改写保存的规格、购买备注或历史数据。图片逐项保留品牌页面、图片原址、核对日期、处理与版权说明，品牌图未声明为开放许可。原签名versionCode11 APK已构建。
+
+0.2.5上一轮：修复「保存整理与复盘」成功后仍停留在照片弹窗的问题。写入并刷新成功后关闭弹窗、返回照片列表；失败时保留输入并提示原因，重试成功清除旧错误。已验证标签、选片状态、分组和复盘持久保存，原签名versionCode10 APK已构建。
 
 0.2.4上一轮：成长页改为紧凑标题、对齐的三项统计、全宽练习建议和代表作入口。无足够数据时合并进度提示；主题、常用焦段和喜欢照片焦段达到各自门槛后独立显示真实分布。统计口径按需展开，保留演示排除、未知焦距处理和原有练习入口。原签名versionCode9 APK已构建，见[成长页验收](GROWTH_UI_ACCEPTANCE.md)。
 
@@ -48,14 +50,14 @@ npm run dev
 
 Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本官方建议零售价（含税，2026-04-01资料）。新增Canon R6 II与RF24–70mm F2.8 L的价格为新加坡官网RRP，未扣除促销与返现。不混同当前售价、市场促销价和中国指导价。其余未核实的官方价格明确显示未知；部分OM镜头规格仍标注未核实。
 
-当前没有取得可离线分发的官方图片许可，使用明确标注「非产品照片」的设备类别图标和官网链接，没有AI设备图。图片机制支持维护者确认许可后的浏览器缓存和APK内置授权图片；普通浏览只读本地资料及已有缓存，不实时抓取官网。APK目前不联网下载图片。用户增量资料包不会自动取得“官方核验”或图片许可状态。
+0.2.6按用户要求加入61张品牌产品页参考缩略图（共909306字节），覆盖全部78个条目。来源、版权、图片地址、校验值和处理记录在 `equipment-photo-data.js`，对应详情可展开查看；图片未声明为开放许可，不适用源码许可。相同型号的卡口变体共用外观参考图，套机镜头、颜色或卡口细节以实物和独立规格为准。图片从APK本地读取，浏览时不抓取官网；普通资料包不能取得维护者图片身份，网络图片缓存仍需单独的许可字段。手动型号无匹配图片时保留明确类别图标。
 
 ## 存储、迁移与安装
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | 0.2.5原签名可安装包已构建，待用户验收保存关闭行为 |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode10（0.2.4为9） |
+| APK | 0.2.6原签名可安装包已构建，待用户验收设备图片 |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode11（0.2.5为10） |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -82,7 +84,7 @@ APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 ```powershell
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.5.apk" --baseline "release/光影练习册_Android_v0.2.4.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.6.apk" --baseline "release/光影练习册_Android_v0.2.5.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
