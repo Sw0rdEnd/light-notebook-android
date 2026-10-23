@@ -47,6 +47,7 @@ public final class LocalStore extends SQLiteOpenHelper {
         return value;
     }
     public File photoFile(String filename) { return new File(photos, safeFile(filename)); }
+    synchronized JSONObject aiPhoto(String id) throws Exception {return readOne("photos",id);}
     private JSONArray readAll(String store) throws Exception {
         JSONArray result = new JSONArray();
         try (Cursor c=getReadableDatabase().query("records",new String[]{"body"},"store=?",new String[]{storeName(store)},null,null,"rowid")) {
@@ -149,14 +150,14 @@ public final class LocalStore extends SQLiteOpenHelper {
             switch(action) {
                 case "open":break;
                 case "setNavigation":owner.setNavigation(p.getString("tab"),p.optString("theme","dark"));break;
-                case "aiEvaluate":result=AiEvaluationService.evaluate(p.getJSONObject("request"));break;
+                case "aiEvaluate":result=new JSONObject().put("schema",AiProtocol.RESULT).put("requestId",p.getJSONObject("request").getString("requestId")).put("status","not_configured").put("message","请从照片的主动评价入口确认上传后进行分析。");break;
                 case "backgroundApp":owner.runOnUiThread(()->owner.moveTaskToBack(true));break;
                 case "all":result=readAll(p.getString("store"));break;
                 case "get":{JSONObject one=readOne(p.getString("store"),p.getString("id"));result=one==null?JSONObject.NULL:one;break;}
                 case "merge":commit(p);break;
                 case "remove":remove(p.getString("store"),p.getString("id"));break;
                 case "removeDemo":removeDemo();break;
-                case "clear":getWritableDatabase().delete("records",null,null);staged.clear();collectUnused();break;
+                case "clear":owner.forgetAiForClear();getWritableDatabase().delete("records",null,null);staged.clear();collectUnused();break;
                 case "photoBegin":result=beginPhoto();break;
                 case "photoAppend":append(p.getString("token"),p.getString("chunk"));break;
                 case "photoFinish":result=finishPhoto(p.getString("token"));break;
