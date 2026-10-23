@@ -49,4 +49,15 @@ test('photo library keeps filters optional, shows active conditions and clears a
  await click('[data-action="quick-review"]');assert.equal($$('.photo-cell').length,2);assert.equal($('[data-action="quick-review"]').getAttribute('aria-pressed'),'true');assert.equal($('[data-action="photo-filter"][data-filter="all"]').getAttribute('aria-pressed'),'true');
  await click('.library-scopes [data-action="reset-photos"]');assert.equal($('.library-filter-count'),null);assert.equal($('#cull-filter').value,'all');assert.equal($('#photo-filter-panel').hidden,true);
 });
+test('browser photo organization persists changes and closes the editor until deliberately reopened',async()=>{
+ await click('[data-action="nav"][data-tab="photos"]');
+ const photoId=$('.photo-open').dataset.id;await click('.photo-open');
+ $('#photo-tags').value='窗边, 构图';$('#photo-review').value='下次留意画面边缘';$('#photo-cull').value='keep';
+ await click('[data-action="photo-organize-save"]');await wait(()=>!$('#modal').open);
+ assert.match($('#toast').textContent,/整理与复盘已保存/);assert.equal($$('.photo-cell').length,2);
+ const another=new Store(),saved=await another.get('photos',photoId);another.close();
+ assert.deepEqual(saved.tags,['窗边','构图']);assert.equal(saved.reviewNote,'下次留意画面边缘');assert.equal(saved.cull,'keep');assert.ok(saved.reviewedAt);
+ await click(`.photo-open[data-id="${photoId}"]`);assert.equal($('#photo-review').value,'下次留意画面边缘');assert.equal($('#photo-cull').value,'keep');assert.equal($('#photo-tags').value,'窗边, 构图');
+ await click('#modal [data-action="close"]');
+});
 test.after(()=>{store.close();page.happyDOM.abort();});

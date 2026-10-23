@@ -43,6 +43,23 @@ test('DOM interaction flow: wizard, task completion/note/skip, import 3 real JPE
  await click('[data-action="nav"][data-tab="settings"]');await click('[data-action="demo"]');await wait(async()=>(await store.all('photos')).filter(p=>p.demo).length===3);assert.equal((await store.all('photos')).filter(p=>p.demo).length,3);await click('[data-action="nav"][data-tab="growth"]');assert.equal($('.growth-metric[data-metric="photos"] strong').textContent,'3');assert.equal($('.growth-metric[data-metric="sessions"] strong').textContent,'1');await click('[data-action="nav"][data-tab="settings"]');await click('[data-action="clear-demo"]');assert.equal((await store.all('photos')).length,3);
 });
 
+test('native photo organization closes on success and keeps unsaved edits available after failure',async()=>{
+ await click('[data-action="nav"][data-tab="photos"]');const photoId=$('.photo-open').dataset.id;
+ await click('.photo-open');const groups=[...$('#photo-groups').selectedOptions].map(el=>el.value).sort();
+ await input('#photo-tags','窗边, 构图');await input('#photo-review','保存并返回照片列表');await change('#photo-cull','keep');
+ await click('[data-action="photo-organize-save"]');await wait(()=>!$('#modal').open);
+ const saved=await store.get('photos',photoId);assert.equal(saved.reviewNote,'保存并返回照片列表');assert.equal(saved.cull,'keep');assert.deepEqual(saved.tags,['窗边','构图']);assert.ok(saved.reviewedAt);
+ assert.deepEqual((await store.all('memberships')).filter(m=>m.photoId===photoId).map(m=>m.groupId).sort(),groups);
+ await click(`.photo-open[data-id="${photoId}"]`);assert.equal($('#photo-review').value,'保存并返回照片列表');
+ await input('#photo-review','失败后保留，重试后保存');
+ const request=bridge.request,logError=console.error;
+ bridge.request=(action,payload)=>action==='merge'&&JSON.parse(payload).photos?.some(p=>p.id===photoId)?JSON.stringify({ok:false,error:'模拟写入失败',name:'WriteError'}):request(action,payload);
+ console.error=(error,...rest)=>{if(error?.message!=='模拟写入失败')logError(error,...rest);};
+ try{await click('[data-action="photo-organize-save"]');assert.equal($('#modal').open,true);assert.equal($('#photo-review').value,'失败后保留，重试后保存');assert.match($('#modal .error-banner').textContent,/模拟写入失败/);assert.equal((await store.get('photos',photoId)).reviewNote,'保存并返回照片列表');}
+ finally{bridge.request=request;console.error=logError;}
+ await click('[data-action="photo-organize-save"]');await wait(()=>!$('#modal').open);assert.equal((await store.get('photos',photoId)).reviewNote,'失败后保留，重试后保存');assert.equal($('#main .error-banner')===null,true);
+});
+
 test('import receipt, filename search, reset filters, mixed failures, unassigned photos and immediate compare',async()=>{
  await click('[data-action="nav"][data-tab="photos"]');
  assert.equal($$('.photo-cell').length,3);assert.match(document.body.textContent,/无EXIF-1.jpg/);
