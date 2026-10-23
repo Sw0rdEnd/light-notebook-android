@@ -1,4 +1,4 @@
-# 光影练习册 · 0.2.3（照片页整理，待合并验收）
+# 光影练习册 · 0.2.4（成长页整理，待合并验收）
 
 **后台与账户0.4.0已同步到GitHub任务分支** `feat/admin-console-20261022`（待合并）：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。用户补装ChatGPT Codex Connector后写入已恢复；电脑直接获取此远端分支，避免重复应用旧补丁。
 
@@ -8,7 +8,9 @@
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
 
-0.2.3本轮：作品库顶部只突出导入；搜索、快捷分类和分组/数量行保持紧凑，选片状态、照片标记、设备与日期统一收进可展开筛选区，生效数量与一键清除始终可见。多选时优先显示对比，其他批量操作按需展开；首次导入和筛选无结果分别提示。已构建原签名versionCode8 APK，先覆盖安装验收，再决定是否合并PR #1。验证与步骤见[照片页验收](PHOTO_LIBRARY_ACCEPTANCE.md)。
+0.2.4本轮：成长页改为紧凑标题、对齐的三项统计、全宽练习建议和代表作入口。无足够数据时合并进度提示；主题、常用焦段和喜欢照片焦段达到各自门槛后独立显示真实分布。统计口径按需展开，保留演示排除、未知焦距处理和原有练习入口。原签名versionCode9 APK已构建，见[成长页验收](GROWTH_UI_ACCEPTANCE.md)。
+
+0.2.3上一轮：作品库顶部只突出导入；搜索、快捷分类和分组/数量行保持紧凑，选片状态、照片标记、设备与日期统一收进可展开筛选区，生效数量与一键清除始终可见。多选时优先显示对比，其他批量操作按需展开；首次导入和筛选无结果分别提示。已构建原签名versionCode8 APK，先覆盖安装验收，再决定是否合并PR #1。验证与步骤见[照片页验收](PHOTO_LIBRARY_ACCEPTANCE.md)。
 
 0.2.2上一轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。源码已同步上述GitHub任务分支，PR #1保持草稿。2026-10-22已从旧交付工程恢复原私有签名并生成**可安装的0.2.2/versionCode7 APK**，证书与旧版一致，待用户真机验收；此前缺签名和403是历史记录，以[当前进度](PROJECT_STATUS.md)为准。安装前导出含照片备份，然后覆盖安装。服务器后台、账户和AI联网功能尚未接入APK。
 
@@ -50,8 +52,8 @@ Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | 0.2.3原签名可安装包已构建，待用户真机验收 |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode8（0.2.2为7） |
+| APK | 0.2.4原签名可安装包已构建，待用户验收成长页 |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode9（0.2.3为8） |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -78,7 +80,7 @@ APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 ```powershell
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.3.apk" --baseline "release/光影练习册_Android_v0.2.2.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.4.apk" --baseline "release/光影练习册_Android_v0.2.3.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
@@ -95,6 +97,7 @@ python scripts/verify-apk.py "release/光影练习册_Android_v0.2.3.apk" --base
 | `organize.js` / `workspace-ui.js` | 分组、迁移、批量整理与导入界面 |
 | `equipment-data.js` / `equipment.js` / `equipment-ui.js` | 官方来源快照、设备规则与设备界面 |
 | `equipment-presets.js` / `catalog-search.js` | 常见具体型号、卡口版本和中文/简称搜索 |
+| `growth-ui.js` / `growth.css` | 成长页统计、分布门槛、练习建议及紧凑布局 |
 | `library.css` | 作品库紧凑布局、筛选、多选与空状态 |
 | `motion.js` / `motion.css` | 全局轻回弹、导航/页面过渡与可中断弹窗和顶部手势 |
 | `choice-picker.js` / `community.css` | 全局选择面板、照片卡片及深浅主题 |

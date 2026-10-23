@@ -1,0 +1,89 @@
+/* Growth follows the compact library layout and keeps sparse data useful. */
+.growth-heading{margin-bottom:18px}
+.growth-heading h1{font-size:28px;line-height:1.3;letter-spacing:-.025em}
+.growth-heading p{margin-top:5px;font-size:13px;color:var(--muted)}
+.growth-page .btn{min-height:44px;padding:9px 14px;gap:6px;border-radius:12px;font-size:13px;line-height:1.5}
+.growth-page .btn svg{width:17px;height:17px}
+.growth-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 16px;padding:16px 4px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.growth-metric{display:flex;flex-direction:column;gap:8px;padding:0 20px;min-width:0}
+.growth-metric+.growth-metric{border-left:1px solid var(--line)}
+.growth-metric dt{display:flex;align-items:center;gap:6px;order:2;font-size:12px;line-height:1.5;color:var(--muted);white-space:nowrap}
+.growth-metric dt svg{width:14px;height:14px;color:var(--weak)}
+.growth-metric dd{margin:0;display:flex;align-items:baseline;gap:6px}
+.growth-metric strong{font:600 30px/1.1 var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.04em;overflow-wrap:anywhere}
+.growth-metric dd>span{font-size:11px;color:var(--weak);flex-shrink:0}
+.growth-recommend{padding:16px 18px;margin-bottom:24px;border:1px solid color-mix(in srgb,var(--accent) 15%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 3%,var(--surface))}
+.growth-recommend-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.growth-recommend h2{font-size:18px;line-height:1.45}
+.growth-recommend .btn{flex-shrink:0;box-shadow:none}
+.growth-recommend>p{font-size:13px;color:var(--muted);line-height:1.85;margin-top:8px;overflow-wrap:anywhere}
+.growth-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;min-height:28px}
+.growth-section-heading h2{font-size:18px;line-height:1.4}
+.growth-section-heading>span{font-size:11px;color:var(--weak)}
+.growth-section-heading .ghost{min-height:36px;padding:6px 0 6px 10px;color:var(--accent);background:transparent;box-shadow:none;font-size:12px}
+.growth-distribution{margin-bottom:24px}
+.growth-insight-empty{display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.growth-insight-empty>svg{width:28px;height:28px;color:var(--weak);margin-top:2px;stroke-width:1.4}
+.growth-insight-empty>div{min-width:0;flex:1}
+.growth-insight-empty h3{font-size:16px;line-height:1.5;margin:0 0 5px}
+.growth-insight-empty p{font-size:13px;line-height:1.8;color:var(--muted)}
+.growth-insight-empty small{font-size:11px;color:var(--weak);line-height:1.7;display:block}
+.growth-progress{display:flex;align-items:center;gap:12px;margin:12px 0 8px}
+.growth-progress>div{display:flex;gap:5px}
+.growth-progress>div>span{width:28px;height:4px;background:var(--line);border-radius:3px}
+.growth-progress>div>.done{background:var(--accent)}
+.growth-progress>span{font-size:11px;line-height:1.6;color:var(--muted)}
+.growth-chart-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.growth-chart-card{padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;min-width:0}
+.growth-chart-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:16px}
+.growth-chart-heading h3{font-size:15px;line-height:1.5;min-width:0}
+.growth-chart-heading>span{font-size:11px;color:var(--weak);white-space:nowrap}
+.growth-bars{display:grid;gap:12px}
+.growth-bar-row{display:grid;grid-template-columns:88px minmax(0,1fr) 38px;align-items:center;gap:10px;font-size:12px;line-height:1.6}
+.growth-bar-row>span:first-child{color:var(--muted)}
+.growth-bar-track{height:7px;border-radius:6px;background:var(--bg);overflow:hidden}
+.growth-bar-track>span{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.growth-bar-value{text-align:right;font-variant-numeric:tabular-nums}
+.growth-bar-value small{font-size:10px;color:var(--weak);margin-left:3px}
+.growth-chart-note{font-size:11px;line-height:1.8;color:var(--weak);margin-top:16px}
+.growth-chart-pending .growth-chart-heading{margin-bottom:6px}
+.growth-chart-pending>p{font-size:12px;line-height:1.8;color:var(--muted)}
+.growth-stars{margin-bottom:16px}
+.growth-stars .photo-grid{margin:0}
+.growth-gallery-note{font-size:11px;line-height:1.8;color:var(--weak);margin-top:10px}
+.growth-star-empty{display:flex;align-items:center;gap:12px;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.growth-star-empty>svg{width:26px;height:26px;color:var(--weak);stroke-width:1.4}
+.growth-star-empty>div{flex:1;min-width:0}
+.growth-star-empty h3{font-size:14px;line-height:1.6}
+.growth-star-empty p{font-size:12px;line-height:1.8;color:var(--muted);margin-top:3px}
+.growth-star-empty>.btn{flex-shrink:0;box-shadow:none;padding:8px 10px;color:var(--accent);background:transparent}
+.growth-data-note{font-size:11px;line-height:1.9;color:var(--weak);padding:0 2px}
+.growth-data-note>summary{cursor:pointer;min-height:36px;display:flex;align-items:center;gap:6px;list-style:none}
+.growth-data-note>summary:before{content:'+';font-size:15px;line-height:1}
+.growth-data-note[open]>summary:before{content:'−'}
+.growth-data-note>summary::-webkit-details-marker{display:none}
+.growth-data-note>p{padding:2px 0 10px;max-width:760px}
+@media(max-width:1000px){.growth-chart-grid{grid-template-columns:1fr}}
+@media(max-width:700px){
+ .growth-heading h1{font-size:26px}
+ .growth-heading p{font-size:12px}
+ .growth-metric{padding:0 12px}
+ .growth-metric strong{font-size:28px}
+ .growth-recommend{padding:14px 16px;margin-bottom:20px}
+ .growth-recommend h2{font-size:17px}
+ .growth-section-heading h2{font-size:17px}
+ .growth-insight-empty{padding:16px;gap:12px}
+ .growth-distribution{margin-bottom:20px}
+ .growth-star-empty{padding:14px;gap:10px}
+}
+@media(max-width:360px){
+ .growth-metric{padding:0 9px}
+ .growth-metric dt{font-size:11px;gap:4px}
+ .growth-metric dt svg{width:12px;height:12px}
+ .growth-metric strong{font-size:26px}
+ .growth-insight-empty>svg{display:none}
+ .growth-recommend-heading{gap:8px}
+ .growth-page .btn{padding:9px 11px;font-size:12px}
+ .growth-star-empty>svg{display:none}
+ .growth-star-empty>.btn{padding:8px}
+}
