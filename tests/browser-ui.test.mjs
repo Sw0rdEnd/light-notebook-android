@@ -22,6 +22,7 @@ const store=new Store();await import('../app/src/main/assets/www/app.js');
 test('VS Code browser preview opens without Android bridge and supports real import, comparison table and AI placeholder',async()=>{
  assert.ok(document.documentElement.classList.contains('preview-native'));assert.ok($('.home-actions'));assert.match(document.body.textContent,/今天，练习/);
  await click('[data-action="nav"][data-tab="photos"]');
+ assert.match($('.library-empty').textContent,/从第一张照片开始/);assert.equal($('#photo-filter-panel').hidden,true);assert.equal($('[data-action="toggle-photo-filters"]').getAttribute('aria-expanded'),'false');
  Object.defineProperty($('#photo-input'),'files',{value:[new File([jpegWithFocal(35)],'预览A.jpg',{type:'image/jpeg'}),new File([jpegWithFocal(85)],'预览B.jpg',{type:'image/jpeg'})],configurable:true});$('#photo-input').dispatchEvent(new page.Event('change',{bubbles:true}));
  await wait(()=>$('[data-action="confirm-groups"]'));await click('#modal [data-action="close"]');assert.equal($$('.photo-cell').length,2);
  const stored=await store.all('photos');assert.deepEqual(stored.map(p=>p.exif.focal).sort((a,b)=>a-b),[35,85]);
@@ -31,5 +32,21 @@ test('VS Code browser preview opens without Android bridge and supports real imp
  await click('#modal [data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.comparison-table'));
  await click('#modal [data-action="close"]');await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
  const again=new Store();assert.equal((await again.all('photos')).length,2);again.close();
+});
+test('photo library keeps filters optional, shows active conditions and clears all criteria together',async()=>{
+ await click('[data-action="nav"][data-tab="photos"]');await click('.library-scopes [data-action="reset-photos"]');
+ assert.equal($$('.photo-cell').length,2);assert.equal($('#photo-filter-panel').hidden,true);
+ if($('[data-action="toggle-select"]').getAttribute('aria-label')!=='退出多选')await click('[data-action="toggle-select"]');
+ assert.equal($('.library-batch-more').open,false);assert.equal($('[data-action="compare"]').disabled,true);
+ await click('[data-action="toggle-photo-filters"]');assert.equal($('#photo-filter-panel').hidden,false);
+ const focal=$('#device-focalFrom');focal.value='60';focal.dispatchEvent(new page.Event('change',{bubbles:true}));await wait(()=>$$('.photo-cell').length===1);
+ assert.equal($('.library-filter-count').textContent,'1');assert.equal($('[data-action="toggle-photo-filters"]').getAttribute('aria-expanded'),'true');
+ const search=$('#photo-search');search.value='不存在的照片';search.dispatchEvent(new page.Event('input',{bubbles:true}));await wait(()=>$$('.photo-cell').length===0);
+ assert.match($('.library-empty').textContent,/没有符合条件/);assert.doesNotMatch($('.library-empty').textContent,/从第一张照片/);
+ await click('[data-action="close-photo-filters"]');assert.equal($('#photo-filter-panel').hidden,true);assert.equal($('.library-filter-count').textContent,'1');
+ await click('.library-result-actions [data-action="reset-photos"]');assert.equal($$('.photo-cell').length,2);assert.equal($('#device-focalFrom').value,'');assert.equal($('#photo-search').value,'');assert.equal($('.library-filter-count'),null);
+ await click('[data-action="toggle-photo-filters"]');await click('[data-action="photo-filter"][data-filter="liked"]');assert.equal($$('.photo-cell').length,0);
+ await click('[data-action="quick-review"]');assert.equal($$('.photo-cell').length,2);assert.equal($('[data-action="quick-review"]').getAttribute('aria-pressed'),'true');assert.equal($('[data-action="photo-filter"][data-filter="all"]').getAttribute('aria-pressed'),'true');
+ await click('.library-scopes [data-action="reset-photos"]');assert.equal($('.library-filter-count'),null);assert.equal($('#cull-filter').value,'all');assert.equal($('#photo-filter-panel').hidden,true);
 });
 test.after(()=>{store.close();page.happyDOM.abort();});

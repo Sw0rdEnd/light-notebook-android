@@ -1,4 +1,4 @@
-# 光影练习册 · 0.2.2（原签名APK已交付，待合并验收）
+# 光影练习册 · 0.2.3（照片页整理，待合并验收）
 
 **后台与账户0.4.0已同步到GitHub任务分支** `feat/admin-console-20261022`（待合并）：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。用户补装ChatGPT Codex Connector后写入已恢复；电脑直接获取此远端分支，避免重复应用旧补丁。
 
@@ -8,7 +8,9 @@
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
 
-0.2.2本轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。源码已同步上述GitHub任务分支，PR #1保持草稿。2026-10-22已从旧交付工程恢复原私有签名并生成**可安装的0.2.2/versionCode7 APK**，证书与旧版一致，待用户真机验收；此前缺签名和403是历史记录，以[当前进度](PROJECT_STATUS.md)为准。安装前导出含照片备份，然后覆盖安装。服务器后台、账户和AI联网功能尚未接入APK。
+0.2.3本轮：作品库顶部只突出导入；搜索、快捷分类和分组/数量行保持紧凑，选片状态、照片标记、设备与日期统一收进可展开筛选区，生效数量与一键清除始终可见。多选时优先显示对比，其他批量操作按需展开；首次导入和筛选无结果分别提示。已构建原签名versionCode8 APK，先覆盖安装验收，再决定是否合并PR #1。验证与步骤见[照片页验收](PHOTO_LIBRARY_ACCEPTANCE.md)。
+
+0.2.2上一轮：按钮收紧/轻回弹、导航背景追随、页面短过渡、手机选择面板弹性进退场及顶部下拉关闭；支持快速中断和系统减少动态效果。细节、实际验证与电脑验收见[MOTION_ACCEPTANCE.md](MOTION_ACCEPTANCE.md)。源码已同步上述GitHub任务分支，PR #1保持草稿。2026-10-22已从旧交付工程恢复原私有签名并生成**可安装的0.2.2/versionCode7 APK**，证书与旧版一致，待用户真机验收；此前缺签名和403是历史记录，以[当前进度](PROJECT_STATUS.md)为准。安装前导出含照片备份，然后覆盖安装。服务器后台、账户和AI联网功能尚未接入APK。
 
 0.2.1新增：常见设备型号随应用预置，添加设备时按类型、品牌、具体型号直接选择；全局下拉框统一为手机底部面板 / 电脑浮层，支持搜索、选中状态和键盘操作。界面更新为浅色圆角卡片与玫红强调色，同时保留深色主题。详见[本次验收](UI_CATALOG_ACCEPTANCE.md)与[完整内置型号清单](EQUIPMENT_CATALOG.md)。
 
@@ -24,7 +26,7 @@ npm run dev
 
 ## 这次能用什么
 
-- 照片 → 管理分组：新建、重命名、简介、组内封面、上移/下移和删除。照片可加入多个组，删除分组不删除照片。
+- 照片 → 右上角更多 → 管理分组：新建、重命名、简介、组内封面、上移/下移和删除。照片可加入多个组，删除分组不删除照片。
 - 导入可选择分组或直接新建；默认未归组。支持逐张进度、内容指纹去重、失败原因、最近一批与历史导入记录。RAW/HEIC/PNG 需先导出为 JPG。
 - 批量加入/移出/移动分组、保留/待定/淘汰；名称、标签、设备、实际焦距及拍摄日期筛选。标签、所属练习与活动分组分别保存。
 - 对比页参数并排对齐、缺失项显示未知；两侧联动放大/位置，直接保存选片结果和原因。用的是复盘副本，未实现像素级图像配准。
@@ -48,8 +50,8 @@ Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | 0.2.2原签名可安装包已构建并交付，待用户真机验收 |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / 源码versionCode7（旧APK为6） |
+| APK | 0.2.3原签名可安装包已构建，待用户真机验收 |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode8（0.2.2为7） |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -76,7 +78,7 @@ APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 ```powershell
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.2.apk" --baseline "release/光影练习册_Android_v0.2.1.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.3.apk" --baseline "release/光影练习册_Android_v0.2.2.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
@@ -93,6 +95,7 @@ python scripts/verify-apk.py "release/光影练习册_Android_v0.2.2.apk" --base
 | `organize.js` / `workspace-ui.js` | 分组、迁移、批量整理与导入界面 |
 | `equipment-data.js` / `equipment.js` / `equipment-ui.js` | 官方来源快照、设备规则与设备界面 |
 | `equipment-presets.js` / `catalog-search.js` | 常见具体型号、卡口版本和中文/简称搜索 |
+| `library.css` | 作品库紧凑布局、筛选、多选与空状态 |
 | `motion.js` / `motion.css` | 全局轻回弹、导航/页面过渡与可中断弹窗和顶部手势 |
 | `choice-picker.js` / `community.css` | 全局选择面板、照片卡片及深浅主题 |
 | `equipment-tasks.js` / `comparison-ui.js` | 任务适配、联动对比与选片复盘 |
