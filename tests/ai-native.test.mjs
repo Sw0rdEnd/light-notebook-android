@@ -33,7 +33,7 @@ test('native RPC aborts and times out without keeping listeners or accepting lat
  }finally{delete globalThis.AndroidAi;await window.happyDOM.abort();}
 });
 
-function harness({configured=false,failSave=false,evaluate}={}){
+function harness({configured=false,failSave=false,evaluate,aiTimeoutMs}={}){
  const window=page(),document=window.document,actions=[],records=new Map(['a','b'].map(id=>[id,{id,name:'PRIVATE_'+id+'.jpg',preview:{nativeFile:id+'.jpg'},thumb:null,exif:{camera:'A7C II',GPS:'PRIVATE_GPS'},tags:[],reasons:[],importedAt:'2026-10-24T00:00:00Z'}]));
  let keyConfigured=configured,mergeFails=failSave;
  const state={photos:[...records.values()],sessions:[],settings:[]},store={all:async name=>name==='photos'?[...records.values()]:[],get:async(_name,id)=>records.get(id),merge:async({photos})=>{if(mergeFails)throw new Error('本地写入失败');for(const p of photos)records.set(p.id,p);}};
@@ -41,7 +41,7 @@ function harness({configured=false,failSave=false,evaluate}={}){
   actions.push({action,payload});if(action==='configure'){assert.equal(payload.apiKey,FAKE_KEY);keyConfigured=true;return {configured:true};}if(action==='test')return {message:'密钥与模型检查通过，尚未发送照片。'};if(action==='forget'){keyConfigured=false;return {configured:false};}
   if(evaluate)return evaluate(payload,options);records.set('a',{...records.get('a'),tags:['分析期间保留的新标签']});return result(payload.request,payload.request.mode==='compare');
  }};
- const ui=createAiUI({state,store,nativeService:service,esc,btn:(label,action,cls='',attrs='')=>`<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`,dialogFrame:(title,body,foot)=>{document.body.innerHTML=`<h2>${esc(title)}</h2>${body}${foot}`;},toast:message=>{const p=document.createElement('p');p.className='toast';p.textContent=message;document.body.append(p);},render(){},reload:async()=>state.photos=[...records.values()],showPhoto(){document.body.innerHTML='<p>返回照片</p>';},showCompare(){document.body.innerHTML='<p>返回双图</p>';}});
+ const ui=createAiUI({state,store,nativeService:service,aiTimeoutMs,esc,btn:(label,action,cls='',attrs='')=>`<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`,dialogFrame:(title,body,foot)=>{document.body.innerHTML=`<h2>${esc(title)}</h2>${body}${foot}`;},toast:message=>{const p=document.createElement('p');p.className='toast';p.textContent=message;document.body.append(p);},render(){},reload:async()=>state.photos=[...records.values()],showPhoto(){document.body.innerHTML='<p>返回照片</p>';},showCompare(){document.body.innerHTML='<p>返回双图</p>';}});
  const el=(action,extra={})=>({dataset:{action,ids:'a,b',...extra},closest:()=>null});
  return {window,document,ui,actions,records,store,state,el,allowSave:()=>{mergeFails=false;}};
 }
@@ -86,4 +86,32 @@ test('cancelled native analysis cannot reopen its modal or save a late result',a
   await h.ui.action(h.el('ai-review'));h.document.querySelector('#ai-consent').checked=true;const pending=h.ui.action(h.el('ai-submit'));await entered;
   await h.ui.action(h.el('ai-back'));assert.match(h.document.body.textContent,/返回双图/);complete();await pending;assert.equal(h.records.get('a').aiReview,undefined);assert.match(h.document.body.textContent,/返回双图/);
  }finally{h.ui.cancel();await h.window.happyDOM.abort();}
+});
+
+test('visible review action works without AbortSignal statics and previews edited intent before consent',async()=>{
+ const h=harness({configured:true}),any=Object.getOwnPropertyDescriptor(AbortSignal,'any'),timeout=Object.getOwnPropertyDescriptor(AbortSignal,'timeout');
+ Object.defineProperty(AbortSignal,'any',{value:undefined,configurable:true});Object.defineProperty(AbortSignal,'timeout',{value:undefined,configurable:true});
+ try{
+  h.document.body.innerHTML=h.ui.entry(['a']);const question=h.document.querySelector('.ai-question');question.value='构图和背景怎么改进？';h.ui.input(question);
+  await h.ui.action(h.document.querySelector('[data-action="ai-review"]'));assert.match(h.document.body.textContent,/确认 AI 点评/);assert.equal(h.document.querySelector('#ai-note').value,question.value);assert.equal(h.document.querySelector('[data-action="ai-submit"]').disabled,true);assert.equal(h.actions.length,0);
+  const note=h.document.querySelector('#ai-note');note.value='后期怎么裁切？<img src=x>';h.document.querySelector('.ai-prompt-preview').open=true;h.ui.input(note);assert.match(h.document.querySelector('#ai-prompt-preview').textContent,/后期与裁切/);assert.equal(h.document.querySelector('details').open,true);assert.equal(h.document.querySelectorAll('img').length,0);
+  const consent=h.document.querySelector('#ai-consent');consent.checked=true;h.ui.input(consent);assert.equal(h.document.querySelector('[data-action="ai-submit"]').disabled,false);
+  await h.ui.action(h.document.querySelector('[data-action="ai-submit"]'));assert.equal(h.actions.length,1);assert.equal(h.actions[0].payload.request.note,note.value);assert.match(h.document.body.textContent,/已保存到这些照片/);
+ }finally{Object.defineProperty(AbortSignal,'any',any);Object.defineProperty(AbortSignal,'timeout',timeout);h.ui.cancel();await h.window.happyDOM.abort();}
+});
+
+test('startup exception is visible in the review modal and a subsequent request is not stuck',async()=>{
+ const h=harness({configured:true}),randomUUID=crypto.randomUUID;
+ try{
+  await h.ui.action(h.el('ai-review',{ids:'a'}));h.document.querySelector('#ai-note').value='怎样改善光线？';h.document.querySelector('#ai-consent').checked=true;
+  crypto.randomUUID=()=>{throw new TypeError('synthetic startup failure');};await h.ui.action(h.el('ai-submit',{ids:'a'}));assert.equal(h.actions.length,0);assert.match(h.document.querySelector('[role="alert"]').textContent,/分析未能启动/);assert.match(h.document.body.textContent,/错误码：AI_REQUEST_FAILED/);
+  crypto.randomUUID=randomUUID;await h.ui.action(h.el('ai-retry',{ids:'a'}));assert.equal(h.document.querySelector('#ai-note').value,'怎样改善光线？');assert.equal(h.document.querySelector('#ai-consent').checked,false);
+  h.document.querySelector('#ai-consent').checked=true;await h.ui.action(h.el('ai-submit',{ids:'a'}));assert.equal(h.actions.length,1);assert.equal(h.records.get('a').aiReview.result.status,'ok');
+ }finally{crypto.randomUUID=randomUUID;h.ui.cancel();await h.window.happyDOM.abort();}
+});
+
+test('review timeout gives a visible error and a retry only starts after another consent',async()=>{
+ const h=harness({configured:true,aiTimeoutMs:20,evaluate:(_payload,{signal})=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(new Error('interrupted')),{once:true}))});
+ try{await h.ui.action(h.el('ai-review'));h.document.querySelector('#ai-note').value='保持我的原问题';h.document.querySelector('#ai-consent').checked=true;await h.ui.action(h.el('ai-submit'));assert.match(h.document.querySelector('[role="alert"]').textContent,/超时/);assert.match(h.document.body.textContent,/AI_TIMEOUT/);assert.equal(h.actions.length,1);assert.equal(h.records.get('a').aiReview,undefined);await h.ui.action(h.el('ai-retry'));assert.equal(h.document.querySelector('#ai-consent').checked,false);assert.equal(h.document.querySelector('#ai-note').value,'保持我的原问题');assert.equal(h.actions.length,1);}
+ finally{h.ui.cancel();await h.window.happyDOM.abort();}
 });

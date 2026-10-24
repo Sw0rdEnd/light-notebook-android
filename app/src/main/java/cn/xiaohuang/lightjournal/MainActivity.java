@@ -54,7 +54,7 @@ public final class MainActivity extends Activity {
             navigation.addView(item,new LinearLayout.LayoutParams(0,-1,1f));
         }
         root.addView(navigation,new LinearLayout.LayoutParams(-1,dp(64)));setContentView(root);setNavigation("practice","light");
-        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setSaveFormData(false);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.7");
+        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setSaveFormData(false);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.8");
         WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");nativeAi=new NativeAiBridge(this,storage);web.addJavascriptInterface(nativeAi,"AndroidAi");
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {

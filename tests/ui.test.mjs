@@ -60,6 +60,19 @@ test('native photo organization closes on success and keeps unsaved edits availa
  await click('[data-action="photo-organize-save"]');await wait(()=>!$('#modal').open);assert.equal((await store.get('photos',photoId)).reviewNote,'失败后保留，重试后保存');assert.equal($('#main .error-banner')===null,true);
 });
 
+test('real app click wiring opens consent from a scrolled photo and reaches the native AI bridge without modern AbortSignal helpers',async()=>{
+ const oldAi=globalThis.AndroidAi,any=Object.getOwnPropertyDescriptor(AbortSignal,'any'),timeout=Object.getOwnPropertyDescriptor(AbortSignal,'timeout'),calls=[];
+ Object.defineProperty(AbortSignal,'any',{value:undefined,configurable:true});Object.defineProperty(AbortSignal,'timeout',{value:undefined,configurable:true});
+ globalThis.AndroidAi={status:()=>JSON.stringify({configured:true}),cancel(){},request:(id,action,input)=>{const payload=JSON.parse(input);calls.push({action,payload});setTimeout(()=>window.dispatchEvent(new window.CustomEvent('android-ai-result',{detail:{id,ok:true,data:{schema:'light-journal.ai-result.v1',requestId:payload.request.requestId,status:'ok',summary:'模拟原生响应',observations:[{aspect:'构图',basis:'observation',text:'模拟观察'}],nextSteps:['移动机位后重拍'],preferred:null}}})),5);}};
+ try{
+  await click('[data-action="nav"][data-tab="photos"]');await click('.photo-open');const id=$('.ai-entry').dataset.ids;$('#modal').scrollTop=1200;await input('.ai-question','摄影拍摄怎么改进？');await click('[data-action="ai-review"]');
+  assert.equal($('#modal').scrollTop,0);assert.match($('#modal').textContent,/确认 AI 点评/);assert.equal($('#ai-note').value,'摄影拍摄怎么改进？');assert.equal(calls.length,0);assert.equal($('[data-action="ai-submit"]').disabled,true);
+  await input('#ai-note','构图和光线怎么改进？');assert.match($('#ai-prompt-preview').textContent,/构图与主体/);assert.match($('#ai-prompt-preview').textContent,/光线与曝光/);
+  $('#ai-consent').checked=true;$('#ai-consent').dispatchEvent(new window.Event('change',{bubbles:true}));await click('[data-action="ai-submit"]');await wait(()=>$('#modal').textContent.includes('已保存到这些照片'));
+  assert.equal(calls.length,1);assert.equal(calls[0].action,'evaluate');assert.equal(calls[0].payload.request.note,'构图和光线怎么改进？');assert.equal((await store.get('photos',id)).aiReview.result.summary,'模拟原生响应');await click('[data-action="ai-back"]');await click('[data-action="ai-last"]');assert.equal(calls.length,1);await click('#modal [data-action="close"]');
+ }finally{globalThis.AndroidAi=oldAi;Object.defineProperty(AbortSignal,'any',any);Object.defineProperty(AbortSignal,'timeout',timeout);}
+});
+
 test('import receipt, filename search, reset filters, mixed failures, unassigned photos and immediate compare',async()=>{
  await click('[data-action="nav"][data-tab="photos"]');
  assert.equal($$('.photo-cell').length,3);assert.match(document.body.textContent,/无EXIF-1.jpg/);

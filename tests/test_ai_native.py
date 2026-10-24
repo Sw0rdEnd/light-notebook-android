@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='light-native-ai-') as name:
     for path,value in stubs.items():
         target=base/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(value)
     src=root/'app/src/main/java/cn/xiaohuang/lightjournal'
-    files=[src/(name+'.java') for name in ['AiException','AiCall','AiSecretCipher','AiProtocol','DeepSeekClient','NativeAiBridge']]
+    files=[src/(name+'.java') for name in ['AiException','AiCall','AiSecretCipher','AiPrompt','AiProtocol','DeepSeekClient','NativeAiBridge']]
     files += [root/'tests/java/NativeAiTest.java',*[base/path for path in stubs]]
     subprocess.run(['java','-jar',args.ecj,'-17','-encoding','UTF-8','-nowarn','-classpath',str(jar),'-d',str(out),*[str(path) for path in files]],check=True)
-    subprocess.run(['java','-Djava.awt.headless=true','--add-modules','jdk.httpserver','-cp',str(out)+os.pathsep+str(jar),'cn.xiaohuang.lightjournal.NativeAiTest'],check=True)
+    subprocess.run(['java','-Djava.awt.headless=true','--add-modules','jdk.httpserver','-cp',str(out)+os.pathsep+str(jar),'cn.xiaohuang.lightjournal.NativeAiTest',str(root/'tests/fixtures/ai-prompts.json')],check=True)

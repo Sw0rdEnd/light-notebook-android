@@ -7,6 +7,8 @@ import javax.imageio.ImageIO;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -38,6 +40,14 @@ public final class NativeAiTest {
         ByteArrayOutputStream image=new ByteArrayOutputStream();ImageIO.write(new BufferedImage(16,12,BufferedImage.TYPE_INT_RGB),"jpg",image);String data="data:image/jpeg;base64,"+Base64.getEncoder().encodeToString(image.toByteArray());
         JSONObject body=AiProtocol.body(request(1),new JSONArray().put(metadata),new JSONArray().put(data));JSONArray content=body.getJSONArray("messages").getJSONObject(1).getJSONArray("content");
         check(content.getJSONObject(2).getJSONObject("image_url").getString("url").equals(data)&&body.getString("model").equals("deepseek-flash")&&body.getInt("max_tokens")==1800&&!body.toString().contains("PRIVATE_"),"real JPEG data blocks reach the official model with bounded output");
+        JSONArray prompts=new JSONArray(Files.readString(Path.of(args[0])));
+        for(int i=0;i<prompts.length();i++){
+            JSONObject fixture=prompts.getJSONObject(i),brief=AiPrompt.brief(fixture.getString("note"),"compare".equals(fixture.getString("mode")));
+            if(!brief.getString("question").equals(fixture.getString("question"))||!brief.getJSONArray("focus").similar(fixture.getJSONArray("focus"))||brief.getJSONArray("steps").length()!=fixture.getInt("steps")||!brief.getString("schema").equals("light-journal.ai-brief.v1"))throw new AssertionError("Prompt fixture "+i);
+        }
+        check(true,"native prompt optimization preserves intent, derives focus and matches the UI fixtures");
+        JSONObject intent=new JSONObject(content.getJSONObject(0).getString("text"));
+        check(intent.getString("question").equals(request(1).getString("note"))&&intent.getJSONObject("reviewBrief").getJSONArray("focus").getString(0).equals("构图与主体")&&!intent.toString().contains(KEY),"actual image request contains the locally optimized brief and original question without another provider call");
         fails("AI_INVALID_IMAGE",()->AiProtocol.body(request(1),new JSONArray().put(metadata),new JSONArray().put("https://evil.invalid/image.jpg")));check(true,"external image URLs cannot become native uploads");
         JSONObject clean=AiProtocol.result(response(model(JSONObject.NULL).put("summary",KEY+" text")),"request-test-123",1,KEY);check(!clean.toString().contains(KEY)&&clean.getJSONObject("usage").getInt("total_tokens")==92,"result is whitelisted, sensitive echo redacted and actual usage retained");
         fails("AI_INVALID_RESPONSE",()->AiProtocol.result(response(model("A")),"request-test-123",1,KEY));

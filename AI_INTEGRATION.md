@@ -1,6 +1,10 @@
-# AI 评价扩展约定 · v1（Android 0.2.7 / 服务器预备版）
+# AI 评价扩展约定 · v1（Android 0.2.8 / 服务器预备版）
 
-Android 0.2.7新增个人密钥直连 DeepSeek，已构建原签名 APK，尚未使用真实密钥或安卓设备验收。原已发布0.2.2 Site没有更新；服务器预备版仍独立使用环境密钥、账户/口令和配额。两条路径都要求用户确认上传，不在浏览或导入时自动分析。
+0.2.8修复点评启动兼容问题：ai-task.js不依赖AbortSignal.any/timeout，异常直接在弹窗显示并释放任务。入口为「开始AI点评」，确认页勾选后启用「确认发送并分析」；等待反馈、错误码和用户原问题草稿保留。
+
+ai-prompt.js在确认页预览本机整理的点评目标/关注方向/分析步骤；修改问题即时更新。AiPrompt.java根据原note和实际图片数重新生成reviewBrief，放入真实图片请求的文本块，同时保留question。整理不额外调用模型，不改写原意或把关键词当画面事实；输出结构与证据规则仍由系统提示约束。9组共享样例验证JS/Java的意图整理。服务器HTTP模板未修改；细节与实际边界见[AI_TRIGGER_ACCEPTANCE.md](AI_TRIGGER_ACCEPTANCE.md)。
+
+Android 0.2.7新增个人密钥直连 DeepSeek，当前0.2.8原签名APK已构建，尚未使用真实密钥或安卓设备验收。原已发布0.2.2 Site没有更新；服务器预备版仍独立使用环境密钥、账户/口令和配额。两条路径都要求用户确认上传，不在浏览或导入时自动分析。
 
 ## Android 0.2.7 原生直连
 
@@ -17,7 +21,7 @@ Android 0.2.7新增个人密钥直连 DeepSeek，已构建原签名 APK，尚未
 
 ## 已实现的调用路径
 
-1. 照片详情/双图比较 → `ai-review` 事件。
+1. 照片详情/双图比较 → 开始AI点评（`ai-review`事件）→ 确认页；原生页面可查看本机整理后的要求。
 2. 用户填写问题并主动发起，`ai.js` 的 `buildEvaluationRequest(photos,{session,note,catalog})` 生成 1–2 张照片的请求；浏览和导入不发起评价。
 3. `requestEvaluation(request,{provider})`：
    - 显式传入 provider 时调用 `provider.evaluate(request)`，用于后续提供商适配。

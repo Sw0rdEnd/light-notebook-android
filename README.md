@@ -1,4 +1,4 @@
-# 光影练习册 · 0.2.7（手机 DeepSeek 点评，待合并验收）
+# 光影练习册 · 0.2.8（点评触发修复与提示词整理，待合并验收）
 
 **后台与账户0.4.0已同步到GitHub任务分支** `feat/admin-console-20261022`（待合并）：访问`/admin/`管理用户、API token用量、额度和云空间；用户在`/account/`使用个人云备份，邮箱登录保留为待启用。管理员初始化和边界见[ADMIN_SYSTEM.md](ADMIN_SYSTEM.md)。用户补装ChatGPT Codex Connector后写入已恢复；电脑直接获取此远端分支，避免重复应用旧补丁。
 
@@ -8,7 +8,9 @@
 
 代码仓库：[Sw0rdEnd/light-notebook-android](https://github.com/Sw0rdEnd/light-notebook-android)。接续工作先读 [PROJECT_STATUS.md](PROJECT_STATUS.md) 和 [AGENTS.md](AGENTS.md)。各阶段实际完成情况、资料限制与操作验收见 [UPGRADE_ACCEPTANCE.md](UPGRADE_ACCEPTANCE.md)。
 
-0.2.7本轮：设置 → AI 点评设置，在手机填写个人 DeepSeek API Key，原生后台线程直连官方模型，支持单张点评和 A/B 双图比较。每次分析前确认发送压缩照片及相关参数，结果保存在照片复盘记录，重开不重复请求。密钥使用 Android Keystore / AES-GCM 加密保存在不备份目录，不进入照片备份或源码。新增 INTERNET 权限，保留 HTTPS 和受限 WebView；不需要另配服务器。原签名 versionCode12 APK 已构建；65项 Node、24项原生 AI JVM、10项选图检查通过，真实密钥付费调用及安卓运行仍待手机验收，见 [AI_NATIVE_ACCEPTANCE.md](AI_NATIVE_ACCEPTANCE.md)。
+0.2.8本轮：修复缺少现代AbortSignal接口时分析无法启动且后续点击被任务状态挡住的问题。照片中改用全宽多行问题框和「开始 AI 点评」，确认页勾选后再发送；等待、错误与错误码直接显示。用户原问题在本机整理为关注方向、画面依据、优先改进和下次练习，发送前可查看并修改，不额外调用API。原生请求重新生成同样的reviewBrief；标签保持横排，320px照片弹窗不横向溢出。原签名versionCode13 APK已构建，71项Node、26项原生AI JVM、10项选图检查通过；真实Key及Android仍待验收，详见[触发修复验收](AI_TRIGGER_ACCEPTANCE.md)。
+
+0.2.7上一轮：设置 → AI 点评设置，在手机填写个人 DeepSeek API Key，原生后台线程直连官方模型，支持单张点评和 A/B 双图比较。每次分析前确认发送压缩照片及相关参数，结果保存在照片复盘记录，重开不重复请求。密钥使用 Android Keystore / AES-GCM 加密保存在不备份目录，不进入照片备份或源码。新增 INTERNET 权限，保留 HTTPS 和受限 WebView；不需要另配服务器。原签名 versionCode12 APK 已构建；65项 Node、24项原生 AI JVM、10项选图检查通过，真实密钥付费调用及安卓运行仍待手机验收，见 [AI_NATIVE_ACCEPTANCE.md](AI_NATIVE_ACCEPTANCE.md)。
 
 0.2.6上一轮：为设备资料库补齐61个具体型号的产品外观参考图，覆盖78个型号 / 卡口条目；图片随APK离线打包，卡片和详情统一适配。旧「我的设备」快照通过型号匹配显示新图片，不改写保存的规格、购买备注或历史数据。图片逐项保留品牌页面、图片原址、核对日期、处理与版权说明，品牌图未声明为开放许可。原签名versionCode11 APK已构建。
 
@@ -42,7 +44,7 @@ npm run dev
 - 标准 JPEG EXIF 逐张匹配设备别名，歧义保留未识别；手动修正独立保存原始 EXIF 与历史快照。不会给无 EXIF 照片套上默认机身。
 - 新任务参考启用的已拥有默认组合，给出实际可用焦段与保守光圈；手机、定焦或未核实规格使用对应的通用练习。
 - v2 备份恢复分组、设备组合、任务、导入历史、选片与复盘。仅记录备份不含任何图片；含照片备份包括压缩副本，不包括原图。仅记录恢复不会覆盖本机已有图片，再导入同指纹原文件可补回缺失副本。
-- Android AI：设置中保存个人密钥并测试连接；照片详情或双图对比 → 主动评价 → 勾选上传确认 → 发送并分析。连接测试只查密钥及模型，不上传照片，也不证明账户余额充足。未配置、网络/余额/模型错误明确显示失败，付费请求不自动重试；见 [AI_INTEGRATION.md](AI_INTEGRATION.md)。
+- Android AI：设置中保存个人密钥并测试连接；照片详情或双图对比 → 开始AI点评 → 查看本机整理的点评要求 → 勾选同意 → 确认发送并分析。连接测试只查密钥及模型，不上传照片，也不证明账户余额充足。等待和失败在弹窗直接显示，付费请求不自动重试；见 [AI_INTEGRATION.md](AI_INTEGRATION.md)。
 
 ## 设备资料与图片边界
 
@@ -58,8 +60,8 @@ Sigma 999 USD为2025-09-09美国官方发布价；Tamron A071129800 JPY为日本
 
 | 项目 | 当前版本 |
 | --- | --- |
-| APK | 0.2.7原签名可安装包已构建，待用户填 Key 验收 AI |
-| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode12（0.2.6为11） |
+| APK | 0.2.8原签名可安装包已构建，待用户验收触发与实际点评 |
+| 包名 / 升级版本 | `cn.xiaohuang.lightjournal` / versionCode13（0.2.7为12） |
 | Android | 9+，target API 35；原生四项底部导航 |
 | 数据版本 | IndexedDB 2 / SQLite user_version 2 / 语义版本2 |
 | 手机存储 | 私有 SQLite 元数据 + `files/photos` JPEG |
@@ -87,7 +89,7 @@ APK 构建支持 Windows 和 Linux x86_64，需要 Python3、Java17+：
 python build_apk.py
 python tests/test_picker.py .tools/ecj.jar
 python tests/test_ai_native.py
-python scripts/verify-apk.py "release/光影练习册_Android_v0.2.7.apk" --baseline "release/光影练习册_Android_v0.2.6.apk"
+python scripts/verify-apk.py "release/光影练习册_Android_v0.2.8.apk" --baseline "release/光影练习册_Android_v0.2.7.apk"
 ```
 
 构建脚本下载官方API35平台、对应系统Build Tools35和ECJ。Java需在PATH中；本机验证使用已有 IntelliJ 自带Java21和工程内便携Python。`--prepared-sdk`与`--ecj`可复用已准备工具。
@@ -112,6 +114,7 @@ python scripts/verify-apk.py "release/光影练习册_Android_v0.2.7.apk" --base
 | `backup.js` / `backup-v2.js` | 版本化备份、完整验证与原子恢复 |
 | `browser-store.js` / `native.js` | 浏览器和Android存储适配 |
 | `ai-native.js` / `ai-native-settings.js` / `ai-ui.js` / `ai.css` | 原生 AI 异步桥接、密钥设置、确认上传和本地结果 |
+| `ai-task.js` / `ai-prompt.js` / `AiPrompt.java` | 兼容任务期限、本机点评要求预览和原生重新生成 |
 | `NativeAiBridge.java` / `AiEvaluationService.java` / `DeepSeekClient.java` | 原生后台任务、压缩照片和固定官方 HTTPS 请求 |
 | `AiCredentials.java` / `AiSecretCipher.java` / `AiProtocol.java` | 系统密钥加密存储、传输白名单和结果验证 |
 | `app/src/main/java/cn/xiaohuang/lightjournal/LocalStore.java` | SQLite及JPEG持久存储 |
