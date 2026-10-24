@@ -1,0 +1,9 @@
+.device-product-photo{position:relative;margin:0 0 4px;display:grid;place-items:center;height:174px;min-width:0;overflow:hidden;border-radius:14px;background:#fff;border:1px solid #eaecf0}
+.device-product-image{display:block;width:100%;height:100%;min-height:0;object-fit:contain;padding:14px;box-sizing:border-box}
+.device-product-photo .image-fallback{display:grid;place-items:center;width:100%;height:100%;padding:16px;box-sizing:border-box;font-size:12px;color:#717680;text-align:center;background:#fafafa}
+.dialog-body>.device-product-photo{height:260px;margin-bottom:12px}
+.device-photo-source{margin:0 0 22px;padding:10px 12px;border-radius:12px;background:var(--bg);font-size:12px;color:var(--muted);line-height:1.8}
+.device-photo-source summary{cursor:pointer;font-weight:550}
+.device-photo-source p{margin:8px 0 0}
+.device-photo-source a{overflow-wrap:anywhere}
+@media(max-width:700px){.device-product-photo{height:124px;border-radius:10px}.device-product-image{padding:9px}.dialog-body>.device-product-photo{height:216px}.dialog-body>.device-product-photo .device-product-image{padding:18px}}

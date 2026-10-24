@@ -19,17 +19,45 @@ const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)];
 const wait=async check=>{for(let i=0;i<400;i++){if(check())return;await new Promise(r=>setTimeout(r,10));}throw new Error('browser UI timeout');};
 const click=async query=>{await wait(()=>$(query)&&!$(query).disabled);$(query).dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));};
 const store=new Store();await import('../app/src/main/assets/www/app.js');
-test('VS Code browser preview opens without Android bridge and supports real import, comparison table and AI placeholder',async()=>{
+test('VS Code browser preview opens without Android bridge and supports real import, comparison table and independent AI module status',async()=>{
  assert.ok(document.documentElement.classList.contains('preview-native'));assert.ok($('.home-actions'));assert.match(document.body.textContent,/今天，练习/);
  await click('[data-action="nav"][data-tab="photos"]');
+ assert.match($('.library-empty').textContent,/从第一张照片开始/);assert.equal($('#photo-filter-panel').hidden,true);assert.equal($('[data-action="toggle-photo-filters"]').getAttribute('aria-expanded'),'false');
  Object.defineProperty($('#photo-input'),'files',{value:[new File([jpegWithFocal(35)],'预览A.jpg',{type:'image/jpeg'}),new File([jpegWithFocal(85)],'预览B.jpg',{type:'image/jpeg'})],configurable:true});$('#photo-input').dispatchEvent(new page.Event('change',{bubbles:true}));
  await wait(()=>$('[data-action="confirm-groups"]'));await click('#modal [data-action="close"]');assert.equal($$('.photo-cell').length,2);
  const stored=await store.all('photos');assert.deepEqual(stored.map(p=>p.exif.focal).sort((a,b)=>a-b),[35,85]);
  await click('[data-action="nav"][data-tab="photos"]');await click('[data-action="toggle-select"]');await click('.photo-open');const second=$$('.photo-open')[1];second.dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));await click('[data-action="compare"]');
  assert.deepEqual($$('.comparison-table thead th').map(e=>e.textContent),['参数','A','B']);assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.parameter-diff').length,1);
  await click('[data-action="compare-side"][data-side="0"]');assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.comparison-table tbody td').length,14);
- await click('#modal [data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.comparison-table'));
- await click('#modal [data-action="close"]');await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
+ await click('#modal [data-action="ai-open-module"]');assert.ok($('.ai-module'));assert.equal($$('.ai-selected-photos article').length,2);await click('[data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.ai-module'));
+ await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
  const again=new Store();assert.equal((await again.all('photos')).length,2);again.close();
+});
+test('photo library keeps filters optional, shows active conditions and clears all criteria together',async()=>{
+ await click('[data-action="nav"][data-tab="photos"]');await click('.library-scopes [data-action="reset-photos"]');
+ assert.equal($$('.photo-cell').length,2);assert.equal($('#photo-filter-panel').hidden,true);
+ if($('[data-action="toggle-select"]').getAttribute('aria-label')!=='退出多选')await click('[data-action="toggle-select"]');
+ assert.equal($('.library-batch-more').open,false);assert.equal($('[data-action="compare"]').disabled,true);
+ await click('[data-action="toggle-photo-filters"]');assert.equal($('#photo-filter-panel').hidden,false);
+ const focal=$('#device-focalFrom');focal.value='60';focal.dispatchEvent(new page.Event('change',{bubbles:true}));await wait(()=>$$('.photo-cell').length===1);
+ assert.equal($('.library-filter-count').textContent,'1');assert.equal($('[data-action="toggle-photo-filters"]').getAttribute('aria-expanded'),'true');
+ const search=$('#photo-search');search.value='不存在的照片';search.dispatchEvent(new page.Event('input',{bubbles:true}));await wait(()=>$$('.photo-cell').length===0);
+ assert.match($('.library-empty').textContent,/没有符合条件/);assert.doesNotMatch($('.library-empty').textContent,/从第一张照片/);
+ await click('[data-action="close-photo-filters"]');assert.equal($('#photo-filter-panel').hidden,true);assert.equal($('.library-filter-count').textContent,'1');
+ await click('.library-result-actions [data-action="reset-photos"]');assert.equal($$('.photo-cell').length,2);assert.equal($('#device-focalFrom').value,'');assert.equal($('#photo-search').value,'');assert.equal($('.library-filter-count'),null);
+ await click('[data-action="toggle-photo-filters"]');await click('[data-action="photo-filter"][data-filter="liked"]');assert.equal($$('.photo-cell').length,0);
+ await click('[data-action="quick-review"]');assert.equal($$('.photo-cell').length,2);assert.equal($('[data-action="quick-review"]').getAttribute('aria-pressed'),'true');assert.equal($('[data-action="photo-filter"][data-filter="all"]').getAttribute('aria-pressed'),'true');
+ await click('.library-scopes [data-action="reset-photos"]');assert.equal($('.library-filter-count'),null);assert.equal($('#cull-filter').value,'all');assert.equal($('#photo-filter-panel').hidden,true);
+});
+test('browser photo organization persists changes and closes the editor until deliberately reopened',async()=>{
+ await click('[data-action="nav"][data-tab="photos"]');
+ const photoId=$('.photo-open').dataset.id;await click('.photo-open');
+ $('#photo-tags').value='窗边, 构图';$('#photo-review').value='下次留意画面边缘';$('#photo-cull').value='keep';
+ await click('[data-action="photo-organize-save"]');await wait(()=>!$('#modal').open);
+ assert.match($('#toast').textContent,/整理与复盘已保存/);assert.equal($$('.photo-cell').length,2);
+ const another=new Store(),saved=await another.get('photos',photoId);another.close();
+ assert.deepEqual(saved.tags,['窗边','构图']);assert.equal(saved.reviewNote,'下次留意画面边缘');assert.equal(saved.cull,'keep');assert.ok(saved.reviewedAt);
+ await click(`.photo-open[data-id="${photoId}"]`);assert.equal($('#photo-review').value,'下次留意画面边缘');assert.equal($('#photo-cull').value,'keep');assert.equal($('#photo-tags').value,'窗边, 构图');
+ await click('#modal [data-action="close"]');
 });
 test.after(()=>{store.close();page.happyDOM.abort();});

@@ -33,3 +33,8 @@ app/build/
 *.sqlite3
 test-results/
 playwright-report/
+
+# Server build and local operations
+dist/
+data/
+backups/

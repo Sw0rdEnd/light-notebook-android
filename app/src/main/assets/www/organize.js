@@ -1,5 +1,5 @@
 // Versioned metadata, independent of the browser/native photo binary storage.
-export const STORES = ['sessions','photos','settings','groups','memberships','imports','equipment','kits','catalog'];
+export const STORES = ['sessions','photos','settings','groups','memberships','imports','equipment','kits','catalog','aiReviews'];
 export const DATA_VERSION = 2;
 const now = () => new Date().toISOString();
 const uid = () => crypto.randomUUID();

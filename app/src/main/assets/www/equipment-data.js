@@ -7,7 +7,7 @@ const item=(id,type,brand,model,mount,format,crop,spec,source,aliases=[])=>({
   weightG:null,weightBasis:type==='body'?'含电池和存储卡':'不含盖及遮光罩',sensorMm:null,megapixels:null,stabilization:null,
   focal:null,maxAperture:null,minFocus:null,magnification:null,filterMm:null,
   price:{amount:null,region:null,currency:null,type:'unverified',asOf:checkedAt,note:'暂未查到官方价格'},
-  image:{url:null,cacheAllowed:false,rights:'未确认离线再分发许可，未下载官方图片',officialPage:source},
+  image:{url:null,cacheAllowed:false,rights:'产品参考图随应用单独维护；来源与版权说明见设备详情',officialPage:source},
   sources:[{url:source,title:'品牌官方规格 / 产品资料',checkedAt}],...spec
 });
 const sigmaSource='https://www.sigma-global.com/en/lenses/c025_20_200_35_63/';

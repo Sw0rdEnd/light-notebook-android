@@ -20,6 +20,7 @@ public final class MainActivity extends Activity {
     private static final int PICK_FILES=11,SAVE_BACKUP=12;
     private WebView web;
     private LocalStore storage;
+    private NativeAiBridge nativeAi;
     private LinearLayout navigation;
     private final Map<String, TextView> navLabels=new HashMap<>();
     private final Map<String, NavIcon> navIcons=new HashMap<>();
@@ -39,17 +40,22 @@ public final class MainActivity extends Activity {
         else root.setFitsSystemWindows(true);
         web=new WebView(this);web.setBackgroundColor(Color.rgb(247,248,250));root.addView(web,new LinearLayout.LayoutParams(-1,0,1f));
         navigation=new LinearLayout(this);navigation.setOrientation(LinearLayout.HORIZONTAL);navigation.setGravity(Gravity.CENTER);
-        String[][] tabs={{"practice","练习"},{"photos","照片"},{"growth","成长"},{"settings","设置"}};
+        String[][] tabs={{"practice","练习"},{"photos","照片"},{"reviews","点评"},{"growth","成长"},{"settings","设置"}};
         for(String[] tab:tabs){
             final String key=tab[0];LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER);item.setPadding(0,dp(5),0,dp(3));
             NavIcon mark=new NavIcon(this,key);item.addView(mark,new LinearLayout.LayoutParams(dp(24),dp(24)));navIcons.put(key,mark);
             TextView label=new TextView(this);label.setText(tab[1]);label.setTextSize(12);label.setGravity(Gravity.CENTER);label.setSingleLine(true);label.setIncludeFontPadding(false);item.addView(label,new LinearLayout.LayoutParams(-1,dp(22)));navLabels.put(key,label);
             item.setContentDescription(tab[1]);item.setFocusable(true);item.setClickable(true);item.setOnClickListener(v->{if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('android-navigation',{detail:"+JSONObject.quote(key)+"}));",null);});
+            item.setOnTouchListener((v,event)->{
+                if(event.getActionMasked()==MotionEvent.ACTION_DOWN)animateNavigationPress(v,true);
+                else if(event.getActionMasked()==MotionEvent.ACTION_UP||event.getActionMasked()==MotionEvent.ACTION_CANCEL)animateNavigationPress(v,false);
+                return false; // Preserve Android click, accessibility and cancellation handling.
+            });
             navigation.addView(item,new LinearLayout.LayoutParams(0,-1,1f));
         }
         root.addView(navigation,new LinearLayout.LayoutParams(-1,dp(64)));setContentView(root);setNavigation("practice","light");
-        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.1");
-        WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");
+        WebSettings s=web.getSettings();s.setUseWideViewPort(true);s.setLoadWithOverviewMode(true);s.setJavaScriptEnabled(true);s.setSaveFormData(false);s.setDomStorageEnabled(true);s.setAllowFileAccess(false);s.setAllowContentAccess(true);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);s.setJavaScriptCanOpenWindowsAutomatically(false);s.setSupportMultipleWindows(false);s.setMediaPlaybackRequiresUserGesture(true);s.setTextZoom(100);s.setUserAgentString(s.getUserAgentString()+" LightJournalAndroid/0.2.9");
+        WebView.setWebContentsDebuggingEnabled(false);storage=new LocalStore(this);web.addJavascriptInterface(storage,"AndroidStorage");nativeAi=new NativeAiBridge(this,storage);web.addJavascriptInterface(nativeAi,"AndroidAi");
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
                 if(allowed(req.getUrl()))return false;
@@ -80,6 +86,14 @@ public final class MainActivity extends Activity {
         web.loadUrl(ORIGIN+"/assets/index.html");
     }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
+    void aiReply(String detail){runOnUiThread(()->{if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('android-ai-result',{detail:"+detail+"}));",null);});}
+    void forgetAiForClear() throws AiException {if(nativeAi!=null)nativeAi.forgetForClear();}
+    private void animateNavigationPress(View item,boolean down){
+        item.animate().cancel();
+        if(!android.animation.ValueAnimator.areAnimatorsEnabled()){item.setScaleX(1f);item.setScaleY(1f);return;}
+        item.animate().scaleX(down?.91f:1f).scaleY(down?.91f:1f).setDuration(down?80:360)
+            .setInterpolator(down?new android.view.animation.DecelerateInterpolator():new android.view.animation.OvershootInterpolator(1.15f)).start();
+    }
     public void setNavigation(String tab,String theme){
         if(!navLabels.containsKey(tab))return;
         runOnUiThread(()->{
@@ -97,6 +111,7 @@ public final class MainActivity extends Activity {
             android.graphics.Path path=new android.graphics.Path();
             if(kind.equals("practice")){c.drawRoundRect(5,3,19,21,2,2,paint);c.drawLine(3,7,7,7,paint);c.drawLine(3,12,7,12,paint);c.drawLine(3,17,7,17,paint);c.drawLine(10,9,16,9,paint);c.drawLine(10,14,15,14,paint);}
             else if(kind.equals("photos")){c.drawRoundRect(3,3,21,21,2,2,paint);c.drawCircle(9,8,1.5f,paint);path.moveTo(4,18);path.lineTo(10,12);path.lineTo(14,16);path.lineTo(18,11);path.lineTo(21,15);c.drawPath(path,paint);}
+            else if(kind.equals("reviews")){c.drawRoundRect(3,3,21,17,3,3,paint);path.moveTo(7,17);path.lineTo(7,22);path.lineTo(12,17);c.drawPath(path,paint);c.drawLine(7,8,17,8,paint);c.drawLine(7,12,14,12,paint);}
             else if(kind.equals("growth")){c.drawLine(4,3,4,21,paint);c.drawLine(4,21,22,21,paint);c.drawLine(9,16,9,11,paint);c.drawLine(14,16,14,7,paint);c.drawLine(19,16,19,3,paint);}
             else{for(int n=0;n<3;n++){float y=5+n*7,x=n==1?9:16;c.drawLine(3,y,x-3,y,paint);c.drawCircle(x,y,2.5f,paint);c.drawLine(x+3,y,21,y,paint);}}
             c.restore();
@@ -116,7 +131,7 @@ public final class MainActivity extends Activity {
         }catch(Exception e){return new WebResourceResponse("text/plain","UTF-8",404,"Not Found",null,new ByteArrayInputStream("本地文件不存在".getBytes(StandardCharsets.UTF_8)));}
     }
     private static WebResourceResponse denied(){return new WebResourceResponse("text/plain","UTF-8",403,"Forbidden",null,new ByteArrayInputStream(new byte[0]));}
-    private static String mime(String path){if(path.endsWith(".html"))return "text/html";if(path.endsWith(".js"))return "application/javascript";if(path.endsWith(".css"))return "text/css";if(path.endsWith(".svg"))return "image/svg+xml";if(path.endsWith(".png"))return "image/png";if(path.endsWith(".jpg"))return "image/jpeg";if(path.endsWith(".json")||path.endsWith(".webmanifest"))return "application/json";return "application/octet-stream";}
+    private static String mime(String path){if(path.endsWith(".html"))return "text/html";if(path.endsWith(".js"))return "application/javascript";if(path.endsWith(".css"))return "text/css";if(path.endsWith(".svg"))return "image/svg+xml";if(path.endsWith(".png"))return "image/png";if(path.endsWith(".jpg"))return "image/jpeg";if(path.endsWith(".webp"))return "image/webp";if(path.endsWith(".json")||path.endsWith(".webmanifest"))return "application/json";return "application/octet-stream";}
     private File exportFile(String token){if(!token.matches("[a-f0-9-]{36}"))throw new IllegalArgumentException("备份 ID 无效");return new File(getCacheDir(),"export-"+token+".json");}
     public synchronized String beginExport(String name)throws Exception {
         if(name.length()>150||!name.endsWith(".json")||name.contains("/")||name.contains("\\"))throw new IOException("备份文件名无效");
@@ -148,5 +163,5 @@ public final class MainActivity extends Activity {
     @Override public void onBackPressed(){if(web!=null)web.evaluateJavascript("window.dispatchEvent(new Event('android-back'));",null);}
     @Override protected void onPause(){super.onPause();if(web!=null)web.evaluateJavascript("window.dispatchEvent(new Event('android-background'));",null);}
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putBoolean("pickerOpen",fileCallback!=null);if(exportToken!=null){out.putString("exportToken",exportToken);out.putString("exportName",exportNames.get(exportToken));}}
-    @Override protected void onDestroy(){if(fileCallback!=null)fileCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AndroidStorage");web.destroy();web=null;}io.shutdown();super.onDestroy();}
+    @Override protected void onDestroy(){if(fileCallback!=null)fileCallback.onReceiveValue(null);if(nativeAi!=null)nativeAi.close();if(web!=null){web.removeJavascriptInterface("AndroidAi");web.removeJavascriptInterface("AndroidStorage");web.destroy();web=null;}io.shutdown();super.onDestroy();}
 }

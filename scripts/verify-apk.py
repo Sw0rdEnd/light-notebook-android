@@ -17,8 +17,11 @@ for key in ['versionCode','versionName']:
     expected=re.search(r'android:'+key+r'="([^"]+)"',manifest).group(1)
     if key+"='"+expected+"'" not in badging:raise RuntimeError('Package version mismatch: '+key)
 if "name='cn.xiaohuang.lightjournal'" not in badging:raise RuntimeError('Package name changed')
-if 'android.permission.INTERNET' in badging:raise RuntimeError('Unexpected network permission')
-print('PASS package, version and offline permissions')
+expected_permissions=set(re.findall(r'<uses-permission\s+android:name="([^"]+)"',manifest))
+actual_permissions=set(re.findall(r"uses-permission: name='([^']+)'",badging))
+if actual_permissions!=expected_permissions:raise RuntimeError('APK permissions differ from the source manifest')
+if 'android:usesCleartextTraffic="false"' not in manifest:raise RuntimeError('Cleartext network traffic must stay disabled')
+print('PASS package, version and declared permissions (cleartext disabled)')
 def certificate(path):
     output=subprocess.check_output(['java','-jar',str(tools/'lib/apksigner.jar'),'verify','--print-certs',str(path)],encoding='utf-8')
     return re.search(r'Signer #1 certificate SHA-256 digest: ([a-f0-9]+)',output).group(1)
