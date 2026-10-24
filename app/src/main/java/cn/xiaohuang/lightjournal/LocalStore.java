@@ -13,7 +13,7 @@ import java.util.*;
 
 /** Native durable store. JSON metadata in SQLite; JPEGs in files/photos, never cache or WebView. */
 public final class LocalStore extends SQLiteOpenHelper {
-    private static final String[] STORES={"sessions","photos","settings","groups","memberships","imports","equipment","kits","catalog"};
+    private static final String[] STORES={"sessions","photos","settings","groups","memberships","imports","equipment","kits","catalog","aiReviews"};
     private final File photos;
     private final Map<String, File> writing = new HashMap<>();
     private final Set<String> staged = new HashSet<>();

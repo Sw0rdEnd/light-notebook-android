@@ -11,13 +11,13 @@ test('AI screen requires explicit upload consent, sends selected copies, escapes
  page.HTMLCanvasElement.prototype.getContext=function(){return {drawImage:image=>this.image=image};};
  page.HTMLCanvasElement.prototype.toBlob=function(callback){sharp(this.image.buffer).resize(this.width,this.height).jpeg().toBuffer().then(bytes=>callback(new Blob([bytes],{type:'image/jpeg'})));};
  const state={photos:['a','b'].map(id=>({id,name:id+'.jpg',preview:new Blob([jpeg],{type:'image/jpeg'}),exif:{focal:35},reasons:[]})),sessions:[]};
- const records=new Map(state.photos.map(p=>[p.id,p]));let enabled=false,uploads=0,returned=false;
+ const records=new Map(state.photos.map(p=>[p.id,p])),reviews=new Map();let enabled=false,uploads=0,returned=false;
  const originalFetch=globalThis.fetch;globalThis.fetch=async(url,options)=>{
   if(url==='/api/ai/status')return Response.json({enabled,message:'AI未配置，照片没有发送。'});
   uploads++;const body=JSON.parse(options.body);assert.equal(body.photos.length,2);assert.ok(body.photos.every(p=>p.image.startsWith('data:image/jpeg;base64,')));
   return Response.json({schema:'light-journal.ai-result.v1',requestId:body.requestId,status:'ok',summary:'<img src=x onerror=alert(1)>',observations:[{aspect:'构图',basis:'observation',text:'A中的主体更集中'}],nextSteps:['改变机位再拍一组'],preferred:'A'});
  };
- const ui=createAiUI({state,store:{get:async(_s,id)=>records.get(id),merge:async({photos})=>photos.forEach(p=>records.set(p.id,p))},esc:x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),btn:(label,action)=>`<button data-action="${action}">${label}</button>`,dialogFrame:(title,body,foot)=>document.body.innerHTML=`<h2>${title}</h2>${body}${foot}`,showPhoto(){returned=true;},showCompare(){returned=true;},reload:async()=>{state.photos=[...records.values()];},render(){},toast(){}});
+ const ui=createAiUI({state,store:{get:async(name,id)=>(name==='photos'?records:reviews).get(id),put:async(name,row)=>(name==='photos'?records:reviews).set(row.id,row),merge:async({photos=[],aiReviews=[]})=>{photos.forEach(p=>records.set(p.id,p));aiReviews.forEach(r=>reviews.set(r.id,r));}},esc:x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),btn:(label,action)=>`<button data-action="${action}">${label}</button>`,dialogFrame:(title,body,foot)=>document.body.innerHTML=`<h2>${title}</h2>${body}${foot}`,showPhoto(){returned=true;},showCompare(){returned=true;},reload:async()=>{state.photos=[...records.values()];},render(){},toast(){}});
  const el=(action,ids='a,b')=>({dataset:{action,ids},closest:()=>null});
  try{
   await ui.action(el('ai-review'));assert.match(document.body.textContent,/照片没有发送/);assert.equal(uploads,0);

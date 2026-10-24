@@ -19,7 +19,7 @@ const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)];
 const wait=async check=>{for(let i=0;i<400;i++){if(check())return;await new Promise(r=>setTimeout(r,10));}throw new Error('browser UI timeout');};
 const click=async query=>{await wait(()=>$(query)&&!$(query).disabled);$(query).dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));};
 const store=new Store();await import('../app/src/main/assets/www/app.js');
-test('VS Code browser preview opens without Android bridge and supports real import, comparison table and AI placeholder',async()=>{
+test('VS Code browser preview opens without Android bridge and supports real import, comparison table and independent AI module status',async()=>{
  assert.ok(document.documentElement.classList.contains('preview-native'));assert.ok($('.home-actions'));assert.match(document.body.textContent,/今天，练习/);
  await click('[data-action="nav"][data-tab="photos"]');
  assert.match($('.library-empty').textContent,/从第一张照片开始/);assert.equal($('#photo-filter-panel').hidden,true);assert.equal($('[data-action="toggle-photo-filters"]').getAttribute('aria-expanded'),'false');
@@ -29,8 +29,8 @@ test('VS Code browser preview opens without Android bridge and supports real imp
  await click('[data-action="nav"][data-tab="photos"]');await click('[data-action="toggle-select"]');await click('.photo-open');const second=$$('.photo-open')[1];second.dispatchEvent(new page.MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,30));await click('[data-action="compare"]');
  assert.deepEqual($$('.comparison-table thead th').map(e=>e.textContent),['参数','A','B']);assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.parameter-diff').length,1);
  await click('[data-action="compare-side"][data-side="0"]');assert.equal($$('.comparison-table tbody tr').length,7);assert.equal($$('.comparison-table tbody td').length,14);
- await click('#modal [data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.comparison-table'));
- await click('#modal [data-action="close"]');await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
+ await click('#modal [data-action="ai-open-module"]');assert.ok($('.ai-module'));assert.equal($$('.ai-selected-photos article').length,2);await click('[data-action="ai-review"]');assert.match($('#modal').textContent,/照片没有发送/);await click('[data-action="ai-back"]');assert.ok($('.ai-module'));
+ await click('[data-action="nav"][data-tab="settings"]');assert.match(document.body.textContent,/浏览器 IndexedDB/);
  const again=new Store();assert.equal((await again.all('photos')).length,2);again.close();
 });
 test('photo library keeps filters optional, shows active conditions and clears all criteria together',async()=>{

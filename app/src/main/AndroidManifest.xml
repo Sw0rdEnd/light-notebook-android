@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.xiaohuang.lightjournal" android:versionCode="13" android:versionName="0.2.8">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.xiaohuang.lightjournal" android:versionCode="14" android:versionName="0.2.9">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35" />
     <application android:label="光影练习册" android:icon="@drawable/icon" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true" android:hardwareAccelerated="true">

@@ -4,15 +4,20 @@ import {nativeAiService,createNativeProvider} from './ai-native.js';
 import {createNativeAiSettings} from './ai-native-settings.js';
 import {createReviewBrief} from './ai-prompt.js';
 import {createAiTask} from './ai-task.js';
+import {createReviewJournal,newReviewRecord} from './ai-history.js';
+import {reviewResultHTML} from './ai-result.js';
 export function createAiUI(ctx){
  const {state,store,esc,btn,dialogFrame,showPhoto,showCompare,reload,render,toast}=ctx;
  const native=!!ctx.nativeService||!!globalThis.AndroidStorage,service=ctx.nativeService||nativeAiService;
- let pending=null,task=null,sequence=0,accessCode='',unsavedResult=null;
+ let pending=null,task=null,sequence=0,accessCode='',unsavedResult=null,activeReview=null;
+ const journal=createReviewJournal(store);
  const drafts=new Map();
  const settings=createNativeAiSettings({service,esc,btn,dialogFrame,toast,render,onOpen:cancel,onReviewReturn:async()=>{if(pending)await open(pending.ids,pending.note);}});
  function validSaved(saved){try{return Array.isArray(saved?.photoIds)&&saved.photoIds.length>=1&&saved.photoIds.length<=2&&saved.photoIds.every(id=>typeof id==='string')&&validateEvaluationResult(saved.result,{requestId:saved.result?.requestId}).status==='ok';}catch{return false;}}
- function cancel(){sequence++;task?.abort();task=null;settings.cancel();}
- const back=ids=>btn('返回照片','ai-back','',`data-ids="${ids.join(',')}"`);
+ function cancel(){sequence++;task?.abort();task=null;settings.cancel();const record=activeReview;activeReview=null;if(record)journal.finish(record,{status:'cancelled',error:{code:'AI_CANCELLED',message:'已取消本地等待，已发出的请求仍可能计费。'}}).then(async()=>{await reload();if(state.tab==='reviews')render();}).catch(()=>toast('取消状态未能写入，记录暂保留为未完成。'));}
+ async function stop(){cancel();await journal.flush();}
+ const back=ids=>btn(state.tab==='reviews'?'返回点评':'返回照片','ai-back','',`data-ids="${ids.join(',')}"`);
+ function photoEntry(ids){const count=(state.aiReviews||[]).filter(r=>Array.isArray(r.photos)&&ids.every(id=>r.photos.some(p=>p.id===id))).length;return `<section class="ai-photo-entry"><div><h3>AI 摄影点评</h3><p>进入独立点评模块，每次评审分别保存。</p></div><div class="row">${btn('去点评','ai-open-module','primary',`data-ids="${ids.join(',')}"`)}${count?btn(`查看记录（${count}）`,'ai-open-history','ghost',`data-ids="${ids.join(',')}"`):''}</div></section>`;}
  function entry(ids){
   const saved=state.photos.find(p=>p.id===ids[0])?.aiReview,hasSaved=validSaved(saved)&&saved.photoIds.join(',')===ids.join(',');
   const info=native?settings.status():null,key=ids.join(',');
@@ -33,11 +38,11 @@ export function createAiUI(ctx){
  }
  function showResult(saved,persisted=true){
   unsavedResult=persisted?null:saved;
-  const result=saved.result,basis={observation:'画面观察',exif:'拍摄参数',inference:'推测'};
-  dialogFrame('AI 分析结果',`<p class="note">${esc(result.summary)}</p>${result.preferred?`<p style="margin-top:12px"><strong>选片建议：${result.preferred==='tie'?'两张各有所长':esc(result.preferred)}</strong></p>`:''}<div class="stack" style="margin-top:20px">${result.observations.map(o=>`<article class="panel"><span class="badge">${basis[o.basis]||'推测'}</span><h3>${esc(o.aspect)}</h3><p>${esc(o.text)}</p></article>`).join('')}</div><h3 style="margin-top:20px">下次可以试试</h3><ul>${result.nextSteps.map(s=>`<li>${esc(s)}</li>`).join('')}</ul><p class="small muted">${persisted?'已保存到这些照片的复盘记录。':'分析已返回，但本地保存失败。可以重试保存当前结果，无需再次分析。'}AI建议由你自行取舍。</p>${Number.isSafeInteger(result.usage?.total_tokens)?`<p class="small muted">服务返回用量：${result.usage.total_tokens} tokens</p>`:''}`,back(saved.photoIds)+(persisted?'':btn('重试保存结果','ai-save-result','primary')));
+  dialogFrame('AI 分析结果',reviewResultHTML(saved.result,esc)+`<p class="small muted">${persisted?'已保存到点评历史。':'分析已返回，但历史结果保存失败。请重试保存当前结果，无需再次分析。'}AI建议由你自行取舍。</p>`,back(saved.photoIds)+(persisted?btn('查看点评历史','ai-history','primary'):btn('重试保存结果','ai-save-result','primary')),'ai-review-modal');
  }
- async function persist(saved){const rows=[];for(const id of saved.photoIds){const fresh=await store.get('photos',id);if(fresh)rows.push({...fresh,aiReview:saved});}if(rows.length!==saved.photoIds.length)throw new Error('照片已移除，无法保存分析。');await store.merge({photos:rows});await reload();render();}
+ async function persist(saved,isCurrent=()=>true){await journal.finish(saved.record,{status:'success',result:saved.result},{isCurrent});await reload();render();}
  async function open(ids,note){
+  if(unsavedResult){showResult(unsavedResult,false);toast('请先保存已返回的结果，再发起新的点评。');return;}
   cancel();const current=sequence,photos=ids.map(id=>state.photos.find(p=>p.id===id)).filter(Boolean);
   if(photos.length!==ids.length||!photos.length)return toast('照片不存在，请刷新后重试。');
   pending={ids,photos,note};drafts.set(ids.join(','),note);
@@ -55,7 +60,7 @@ export function createAiUI(ctx){
   if(native&&name==='ai-settings'&&el.dataset.return==='review'&&pending)pending.note=document.querySelector('#ai-note')?.value??pending.note;
   if(native&&await settings.action(el))return true;
   if(name==='ai-save-result'){if(unsavedResult){const saved=unsavedResult;try{await persist(saved);showResult(saved);}catch(error){toast(error.message||'结果保存失败，请保留当前页面后重试。');}}return true;}
-  if(name==='ai-back'){cancel();const ids=el.dataset.ids.split(',');if(ids.length===2){state.selected=ids;showCompare();}else showPhoto(ids[0]);return true;}
+  if(name==='ai-back'){await stop();if(state.tab==='reviews'){ctx.closeDialog();await reload();render();return true;}const ids=el.dataset.ids.split(',');if(ids.length===2){state.selected=ids;showCompare();}else showPhoto(ids[0]);return true;}
   if(name==='ai-review'){await open(el.dataset.ids.split(','),el.closest('.ai-entry')?.querySelector('.ai-question')?.value||'');return true;}
   if(name==='ai-last'){cancel();const saved=state.photos.find(p=>p.id===el.dataset.ids.split(',')[0])?.aiReview;if(validSaved(saved))showResult(saved);else toast('上次分析记录不可用，请重新分析。');return true;}
   if(name==='ai-retry'){cancel();if(pending)confirm();return true;}
@@ -64,30 +69,40 @@ export function createAiUI(ctx){
   if(!document.querySelector('#ai-consent')?.checked){toast('请先确认同意发送所选照片。');return true;}
   if(!native&&!pending.useAccount){accessCode=document.querySelector('#ai-access-code').value.trim();if(!accessCode){toast('请输入站点管理员提供的AI访问口令。');return true;}}
   pending.note=document.querySelector('#ai-note').value;drafts.set(pending.ids.join(','),pending.note);
-  const current=sequence,details=pending;let running;
+  const current=sequence,details=pending;let running,record;
   try{
    running=createAiTask({timeoutMs:ctx.aiTimeoutMs||65000,onElapsed:seconds=>{if(current!==sequence)return;const status=document.querySelector('#ai-progress');if(status)status.textContent=`已等待 ${seconds} 秒。${seconds>=15?'仍在等待服务响应，可返回取消；不会自动重试。':'正在准备照片并请求分析…'}`;}});task=running;const signal=running.signal;
    dialogFrame('正在分析照片','<div class="ai-working" role="status" aria-live="polite"><span class="ai-working-dot" aria-hidden="true"></span><p id="ai-progress">正在准备照片并请求分析…</p></div><p class="small muted" style="margin-top:12px">返回或关闭可取消本地等待；已经发出的分析仍可能计费。</p>',back(details.ids),'ai-review-modal');
-   const session=state.sessions.find(s=>s.id===details.photos[0]?.sessionId),request=buildEvaluationRequest(details.photos,{session,note:details.note,catalog:ctx.catalog?.()});
-   const provider=native?createNativeProvider({service,signal,consent:true}):createHttpProvider({photos:details.photos,accessCode:details.useAccount?null:accessCode,csrfToken:details.csrfToken,signal});
+   const photos=[];for(const id of details.ids){const fresh=await store.get('photos',id);if(!fresh)throw new Error('所选照片已移除，请重新选择。');photos.push(fresh);}
+   const session=state.sessions.find(s=>s.id===photos[0]?.sessionId),request=buildEvaluationRequest(photos,{session,note:details.note,catalog:ctx.catalog?.()});
+   try{record=await journal.start(newReviewRecord(request,photos,{origin:native?'native':'web',model:native?'deepseek-flash':null}));}catch{const error=new Error('点评历史无法保存，照片尚未发送。请检查设备空间后重试。');error.code='AI_HISTORY_SAVE_FAILED';throw error;}
+   if(current!==sequence){await journal.finish(record,{status:'cancelled',error:{code:'AI_CANCELLED',message:'准备期间已取消，未发送分析请求。'}});return;}
+   activeReview=record;if(signal.aborted)throw new Error('分析等待已结束。');
+   const provider=native?createNativeProvider({service,signal,consent:true}):createHttpProvider({photos,accessCode:details.useAccount?null:accessCode,csrfToken:details.csrfToken,signal});
    const result=await requestEvaluation(request,{provider});
    if(result.status!=='ok')throw new Error(result.message||'AI服务尚未启用。');
    if(current!==sequence)return;
-   const saved={result,photoIds:details.ids,note:details.note,at:new Date().toISOString()};let persisted=true;
-   try{await persist(saved);}catch{persisted=false;}
+   if(signal.aborted)throw new Error('分析等待已结束。');
+   const saved={record,result,photoIds:details.ids,note:details.note,at:new Date().toISOString()};let persisted=true;
+   try{await persist(saved,()=>current===sequence);}catch{persisted=false;}
+   if(activeReview?.id===record.id)activeReview=null;
    if(current===sequence)showResult(saved,persisted);
-  }catch(error){if(current===sequence)showFailure(error,details.ids,running?.timedOut);}
+  }catch(error){if(current===sequence){activeReview=null;const info=failureInfo(error,running?.timedOut);let saved=true;if(record)try{await journal.finish(record,{status:'failed',error:info});await reload();render();}catch{saved=false;}if(current===sequence)showFailure(error,details.ids,running?.timedOut,saved);}}
   finally{running?.dispose();if(current===sequence)task=null;}
   return true;
  }
- function showFailure(error,ids,timedOut=false){
+ function failureInfo(error,timedOut=false){
   const code=timedOut?'AI_TIMEOUT':/^[A-Z][A-Z0-9_]{2,60}$/.test(error?.code||'')?error.code:'AI_REQUEST_FAILED';
   const message=timedOut?'分析等待超时，可检查网络后重新发起。':error instanceof TypeError?'分析未能启动，请检查AI设置或更新Android System WebView。':error?.message||'分析未完成，请检查AI设置后重试。';
-  dialogFrame('这次分析未完成',`<p class="error-banner" role="alert">${esc(message)}</p><p class="small muted ai-error-code">错误码：${code}</p><p class="small muted">本地照片与手动复盘仍保留，不会自动重试。重新填写后会再次确认上传。</p>`,(ids?.length?back(ids):btn('关闭','close'))+(native?btn('AI 设置','ai-settings','ghost','data-return="review"'):'')+(pending?btn('重新填写','ai-retry','primary'):''),'ai-review-modal');
+  return {code,message:String(message).slice(0,1000)};
+ }
+ function showFailure(error,ids,timedOut=false,persisted=true){
+  const {code,message}=failureInfo(error,timedOut);
+  dialogFrame('这次分析未完成',`<p class="error-banner" role="alert">${esc(message)}</p><p class="small muted ai-error-code">错误码：${code}</p><p class="small muted">${persisted?'':'失败状态暂未写入历史，请保留本机数据。'}本地照片与手动复盘仍保留，不会自动重试。重新填写后会再次确认上传。</p>`,(ids?.length?back(ids):btn('关闭','close'))+(native?btn('AI 设置','ai-settings','ghost','data-return="review"'):'')+(pending?btn('重新填写','ai-retry','primary'):''),'ai-review-modal');
  }
  async function action(el){
   if(!el.dataset.action?.startsWith('ai-'))return false;
   try{return await dispatch(el);}catch(error){cancel();showFailure(error,pending?.ids||el.dataset.ids?.split(','));return true;}
  }
- return {entry,action,input,cancel,settingsEntry:()=>native?settings.entry():''};
+ return {native,entry,photoEntry,action,input,cancel,stop,flushHistory:()=>journal.flush(),getDraft:ids=>drafts.get(ids.join(',')),setDraft:(ids,note)=>drafts.set(ids.join(','),String(note||'').slice(0,1000)),unsavedId:()=>unsavedResult?.record.id||null,reset:async()=>{await stop();pending=null;unsavedResult=null;drafts.clear();},settingsEntry:()=>native?settings.entry():''};
 }

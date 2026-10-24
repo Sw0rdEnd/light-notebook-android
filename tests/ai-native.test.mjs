@@ -35,15 +35,15 @@ test('native RPC aborts and times out without keeping listeners or accepting lat
 
 function harness({configured=false,failSave=false,evaluate,aiTimeoutMs}={}){
  const window=page(),document=window.document,actions=[],records=new Map(['a','b'].map(id=>[id,{id,name:'PRIVATE_'+id+'.jpg',preview:{nativeFile:id+'.jpg'},thumb:null,exif:{camera:'A7C II',GPS:'PRIVATE_GPS'},tags:[],reasons:[],importedAt:'2026-10-24T00:00:00Z'}]));
- let keyConfigured=configured,mergeFails=failSave;
- const state={photos:[...records.values()],sessions:[],settings:[]},store={all:async name=>name==='photos'?[...records.values()]:[],get:async(_name,id)=>records.get(id),merge:async({photos})=>{if(mergeFails)throw new Error('本地写入失败');for(const p of photos)records.set(p.id,p);}};
+ let keyConfigured=configured,mergeFails=failSave;const reviewRecords=new Map();
+ const state={photos:[...records.values()],sessions:[],settings:[],aiReviews:[]},store={all:async name=>name==='photos'?[...records.values()]:name==='aiReviews'?[...reviewRecords.values()]:[],get:async(name,id)=>(name==='photos'?records:reviewRecords).get(id),put:async(name,row)=>{(name==='photos'?records:reviewRecords).set(row.id,row);},merge:async({photos=[],aiReviews=[]})=>{if(mergeFails&&photos.length)throw new Error('本地写入失败');for(const p of photos)records.set(p.id,p);for(const r of aiReviews)reviewRecords.set(r.id,r);}};
  const service={status:()=>({available:true,configured:keyConfigured,model:'deepseek-flash'}),request:async(action,payload,options)=>{
   actions.push({action,payload});if(action==='configure'){assert.equal(payload.apiKey,FAKE_KEY);keyConfigured=true;return {configured:true};}if(action==='test')return {message:'密钥与模型检查通过，尚未发送照片。'};if(action==='forget'){keyConfigured=false;return {configured:false};}
   if(evaluate)return evaluate(payload,options);records.set('a',{...records.get('a'),tags:['分析期间保留的新标签']});return result(payload.request,payload.request.mode==='compare');
  }};
- const ui=createAiUI({state,store,nativeService:service,aiTimeoutMs,esc,btn:(label,action,cls='',attrs='')=>`<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`,dialogFrame:(title,body,foot)=>{document.body.innerHTML=`<h2>${esc(title)}</h2>${body}${foot}`;},toast:message=>{const p=document.createElement('p');p.className='toast';p.textContent=message;document.body.append(p);},render(){},reload:async()=>state.photos=[...records.values()],showPhoto(){document.body.innerHTML='<p>返回照片</p>';},showCompare(){document.body.innerHTML='<p>返回双图</p>';}});
+ const ui=createAiUI({state,store,nativeService:service,aiTimeoutMs,esc,btn:(label,action,cls='',attrs='')=>`<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`,dialogFrame:(title,body,foot)=>{document.body.innerHTML=`<h2>${esc(title)}</h2>${body}${foot}`;},toast:message=>{const p=document.createElement('p');p.className='toast';p.textContent=message;document.body.append(p);},render(){},reload:async()=>{state.photos=[...records.values()];state.aiReviews=[...reviewRecords.values()];},showPhoto(){document.body.innerHTML='<p>返回照片</p>';},showCompare(){document.body.innerHTML='<p>返回双图</p>';}});
  const el=(action,extra={})=>({dataset:{action,ids:'a,b',...extra},closest:()=>null});
- return {window,document,ui,actions,records,store,state,el,allowSave:()=>{mergeFails=false;}};
+ return {window,document,ui,actions,records,reviewRecords,store,state,el,allowSave:()=>{mergeFails=false;}};
 }
 
 test('native settings configure, test and remove keys without echoing them or putting them in photo backups',async()=>{
@@ -65,6 +65,7 @@ test('native analysis requires consent, preserves fresh photo edits, escapes out
   assert.equal(h.actions.length,1);assert.equal(h.actions[0].action,'evaluate');assert.deepEqual(h.actions[0].payload.request.photos,[{id:'a',label:'A'},{id:'b',label:'B'}]);assert.equal(JSON.stringify(h.actions[0].payload).includes('PRIVATE_'),false);
   assert.equal(h.document.querySelectorAll('img').length,0);assert.match(h.document.body.textContent,/<img src=x/);assert.deepEqual(h.records.get('a').tags,['分析期间保留的新标签']);assert.equal(h.records.get('a').aiReview.result.preferred,'A');assert.equal(h.records.get('b').aiReview.result.usage.total_tokens,92);
   const backup=await makeBackup(h.store,false);assert.equal(backup.photos[0].aiReview.result.status,'ok');assert.equal(JSON.stringify(backup).includes(FAKE_KEY),false);
+  assert.equal(h.reviewRecords.size,1);assert.equal(backup.aiReviews.length,1);assert.equal(backup.aiReviews[0].status,'success');
   await h.ui.action(h.el('ai-last'));assert.equal(h.actions.length,1);assert.match(h.document.body.textContent,/92 tokens/);
  }finally{h.ui.cancel();await h.window.happyDOM.abort();}
 });
@@ -72,10 +73,10 @@ test('native analysis requires consent, preserves fresh photo edits, escapes out
 test('native result save retry never repeats paid analysis and failed native requests never fabricate a saved review',async()=>{
  const h=harness({configured:true,failSave:true});try{
   await h.ui.action(h.el('ai-review',{ids:'a'}));h.document.querySelector('#ai-consent').checked=true;await h.ui.action(h.el('ai-submit',{ids:'a'}));assert.equal(h.actions.length,1);assert.ok(h.document.querySelector('[data-action="ai-save-result"]'));assert.equal(h.records.get('a').aiReview,undefined);
-  h.allowSave();await h.ui.action(h.el('ai-save-result',{ids:'a'}));assert.equal(h.actions.length,1);assert.equal(h.records.get('a').aiReview.result.preferred,null);assert.equal(h.document.querySelector('[data-action="ai-save-result"]'),null);
+  assert.equal(h.reviewRecords.size,1);assert.equal([...h.reviewRecords.values()][0].status,'running');h.allowSave();await h.ui.action(h.el('ai-save-result',{ids:'a'}));assert.equal(h.actions.length,1);assert.equal(h.records.get('a').aiReview.result.preferred,null);assert.equal(h.document.querySelector('[data-action="ai-save-result"]'),null);assert.equal(h.reviewRecords.size,1);assert.equal([...h.reviewRecords.values()][0].status,'success');
  }finally{h.ui.cancel();await h.window.happyDOM.abort();}
  const f=harness({configured:true,evaluate:async()=>{throw new Error('DeepSeek余额不足，请检查账户余额。');}});try{
-  await f.ui.action(f.el('ai-review'));f.document.querySelector('#ai-consent').checked=true;await f.ui.action(f.el('ai-submit'));assert.match(f.document.body.textContent,/余额不足/);assert.equal(f.records.get('a').aiReview,undefined);assert.equal(f.actions.length,1);
+  await f.ui.action(f.el('ai-review'));f.document.querySelector('#ai-consent').checked=true;await f.ui.action(f.el('ai-submit'));assert.match(f.document.body.textContent,/余额不足/);assert.equal(f.records.get('a').aiReview,undefined);assert.equal(f.actions.length,1);assert.equal([...f.reviewRecords.values()][0].status,'failed');
  }finally{f.ui.cancel();await f.window.happyDOM.abort();}
 });
 
@@ -84,7 +85,7 @@ test('cancelled native analysis cannot reopen its modal or save a late result',a
  const h=harness({configured:true,evaluate:payload=>new Promise(resolve=>{complete=()=>resolve(result(payload.request));started();})});
  try{
   await h.ui.action(h.el('ai-review'));h.document.querySelector('#ai-consent').checked=true;const pending=h.ui.action(h.el('ai-submit'));await entered;
-  await h.ui.action(h.el('ai-back'));assert.match(h.document.body.textContent,/返回双图/);complete();await pending;assert.equal(h.records.get('a').aiReview,undefined);assert.match(h.document.body.textContent,/返回双图/);
+  await h.ui.action(h.el('ai-back'));assert.match(h.document.body.textContent,/返回双图/);complete();await pending;assert.equal(h.records.get('a').aiReview,undefined);assert.match(h.document.body.textContent,/返回双图/);assert.equal([...h.reviewRecords.values()][0].status,'cancelled');
  }finally{h.ui.cancel();await h.window.happyDOM.abort();}
 });
 
@@ -96,7 +97,7 @@ test('visible review action works without AbortSignal statics and previews edite
   await h.ui.action(h.document.querySelector('[data-action="ai-review"]'));assert.match(h.document.body.textContent,/确认 AI 点评/);assert.equal(h.document.querySelector('#ai-note').value,question.value);assert.equal(h.document.querySelector('[data-action="ai-submit"]').disabled,true);assert.equal(h.actions.length,0);
   const note=h.document.querySelector('#ai-note');note.value='后期怎么裁切？<img src=x>';h.document.querySelector('.ai-prompt-preview').open=true;h.ui.input(note);assert.match(h.document.querySelector('#ai-prompt-preview').textContent,/后期与裁切/);assert.equal(h.document.querySelector('details').open,true);assert.equal(h.document.querySelectorAll('img').length,0);
   const consent=h.document.querySelector('#ai-consent');consent.checked=true;h.ui.input(consent);assert.equal(h.document.querySelector('[data-action="ai-submit"]').disabled,false);
-  await h.ui.action(h.document.querySelector('[data-action="ai-submit"]'));assert.equal(h.actions.length,1);assert.equal(h.actions[0].payload.request.note,note.value);assert.match(h.document.body.textContent,/已保存到这些照片/);
+  await h.ui.action(h.document.querySelector('[data-action="ai-submit"]'));assert.equal(h.actions.length,1);assert.equal(h.actions[0].payload.request.note,note.value);assert.match(h.document.body.textContent,/已保存到点评历史/);
  }finally{Object.defineProperty(AbortSignal,'any',any);Object.defineProperty(AbortSignal,'timeout',timeout);h.ui.cancel();await h.window.happyDOM.abort();}
 });
 
@@ -114,4 +115,13 @@ test('review timeout gives a visible error and a retry only starts after another
  const h=harness({configured:true,aiTimeoutMs:20,evaluate:(_payload,{signal})=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(new Error('interrupted')),{once:true}))});
  try{await h.ui.action(h.el('ai-review'));h.document.querySelector('#ai-note').value='保持我的原问题';h.document.querySelector('#ai-consent').checked=true;await h.ui.action(h.el('ai-submit'));assert.match(h.document.querySelector('[role="alert"]').textContent,/超时/);assert.match(h.document.body.textContent,/AI_TIMEOUT/);assert.equal(h.actions.length,1);assert.equal(h.records.get('a').aiReview,undefined);await h.ui.action(h.el('ai-retry'));assert.equal(h.document.querySelector('#ai-consent').checked,false);assert.equal(h.document.querySelector('#ai-note').value,'保持我的原问题');assert.equal(h.actions.length,1);}
  finally{h.ui.cancel();await h.window.happyDOM.abort();}
+});
+
+test('history must be durable before a paid call and clearing data cannot resurrect a cancelled review',async()=>{
+ const h=harness({configured:true}),put=h.store.put;
+ try{h.store.put=async()=>{throw new Error('模拟历史写入失败');};await h.ui.action(h.el('ai-review'));h.document.querySelector('#ai-consent').checked=true;await h.ui.action(h.el('ai-submit'));assert.equal(h.actions.length,0);assert.match(h.document.body.textContent,/AI_HISTORY_SAVE_FAILED/);assert.equal(h.reviewRecords.size,0);}
+ finally{h.store.put=put;await h.ui.stop();await h.window.happyDOM.abort();}
+ let finish,started;const entered=new Promise(resolve=>started=resolve),f=harness({configured:true,evaluate:payload=>new Promise(resolve=>{finish=()=>resolve(result(payload.request));started();})});
+ try{await f.ui.action(f.el('ai-review'));f.document.querySelector('#ai-consent').checked=true;const pending=f.ui.action(f.el('ai-submit'));await entered;assert.equal(f.reviewRecords.size,1);await f.ui.reset();f.records.clear();f.reviewRecords.clear();finish();await pending;assert.equal(f.reviewRecords.size,0);assert.equal(f.records.size,0);}
+ finally{await f.ui.stop();await f.window.happyDOM.abort();}
 });
